@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d13">
+<meta name="theme-color" content="#050505">
 <meta name="description" content="ASMER AI — your intelligent workspace">
 <title>ASMER AI</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -80,6 +80,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .video-preview{width:100%;max-height:520px;margin-top:16px;background:#000;border:1px solid #333;border-radius:12px}
 .tool-note{color:#999;font-size:12px;line-height:1.6;margin-top:12px}
 .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.version-pill{display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid #444;border-radius:999px;color:#aaa;font-size:9px;font-weight:800;letter-spacing:.8px;vertical-align:middle}
+.topbar-action{border:1px solid #444;border-radius:9px;background:#111;color:#fff;padding:8px 11px;font-size:11px;font-weight:750}
+.topbar-action:hover{background:#fff;color:#000}
+.message-tools{display:flex;gap:7px;margin-top:9px}
+.message-copy{border:1px solid #383838;border-radius:7px;background:#111;color:#bbb;padding:5px 9px;font-size:10px}
+.message-copy:hover{border-color:#888;color:#fff}
+.message-copy:disabled{opacity:.5;cursor:default}
 @media(max-width:900px){.topbar{gap:10px}.tool-nav{max-width:58vw}.tool-tab{padding:7px 8px}}
 @media(max-width:620px){.tool-grid{grid-template-columns:1fr}.tool-view{padding:22px 14px}.topbar-title{display:none}.tool-nav{max-width:72vw}.tool-tab{font-size:11px;padding:7px}}
 </style>
@@ -122,7 +129,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div class="side-bottom"><div class="user-card"><div class="avatar" id="userAvatar">A</div><div class="user-meta"><strong id="userName">ASMER User</strong><small id="userEmail">Signed in</small></div><button class="icon-button" id="logoutButton" type="button" title="Sign out" aria-label="Sign out">↗</button></div></div>
   </aside>
   <main class="main">
-    <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="icon-button" id="openSidebar" type="button" aria-label="Open menu">☰</button><div class="topbar-title">ASMER</div></div><nav class="tool-nav" aria-label="Workspace tools"><button class="tool-tab active" data-view="chat" type="button">Chat</button><button class="tool-tab" data-view="image" type="button">Images</button><button class="tool-tab" data-view="video" type="button">Video</button><button class="tool-tab" data-view="files" type="button">Files</button></nav><div class="status"><span class="status-dot"></span><span>ONLINE</span></div></header>
+    <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="icon-button" id="openSidebar" type="button" aria-label="Open menu">☰</button><div class="topbar-title">ASMER AI <span class="version-pill">V2.2.0</span></div></div><nav class="tool-nav" aria-label="Workspace tools"><button class="tool-tab active" data-view="chat" type="button">Chat</button><button class="tool-tab" data-view="image" type="button">Images</button><button class="tool-tab" data-view="video" type="button">Video</button><button class="tool-tab" data-view="files" type="button">Files</button></nav><div style="display:flex;align-items:center;gap:10px"><button class="topbar-action" id="exportChatButton" type="button" title="Export this conversation as Markdown">Export chat</button><div class="status"><span class="status-dot"></span><span>ONLINE</span></div></div></header>
     <section class="chat-area view-panel" id="chatView">
       <div class="messages" id="messages">
         <div class="welcome" id="welcome"><div class="welcome-mark">A</div><div class="eyebrow">WELCOME TO ASMER</div><h1>What will you <span>create today?</span></h1><p>Ask questions, explore ideas, learn new things, or build something useful.</p>
@@ -444,6 +451,33 @@ function appendMessage(role, content) {
   const text = document.createElement("div");
   text.textContent = content;
   body.append(name, text);
+  if (role === "assistant" && content && content !== "Thinking...") {
+    const tools = document.createElement("div");
+    tools.className = "message-tools";
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "message-copy";
+    copy.textContent = "Copy answer";
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text.textContent || "");
+        copy.textContent = "Copied";
+      } catch {
+        const helper = document.createElement("textarea");
+        helper.value = text.textContent || "";
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.select();
+        const copied = document.execCommand("copy");
+        helper.remove();
+        copy.textContent = copied ? "Copied" : "Select and copy";
+      }
+      setTimeout(() => { copy.textContent = "Copy answer"; }, 1600);
+    });
+    tools.append(copy);
+    body.append(tools);
+  }
   row.append(avatar, body);
   $("messages").appendChild(row);
   $("messages").scrollTop = $("messages").scrollHeight;
@@ -553,6 +587,28 @@ async function sendMessage(value) {
     $("messages").scrollTop = $("messages").scrollHeight;
   }
 }
+
+
+$("exportChatButton").addEventListener("click", () => {
+  const rows = Array.from($("messages").querySelectorAll(".message"));
+  const exported = rows.map((row) => {
+    const role = row.classList.contains("user") ? "You" : "ASMER AI";
+    const content = row.querySelector(".message-body > div:nth-child(2)");
+    return content && content.textContent.trim() ? "## " + role + "\n\n" + content.textContent.trim() : "";
+  }).filter(Boolean);
+  if (!exported.length) { toast("There is no conversation to export yet."); return; }
+  const markdown = "# ASMER AI conversation\n\n" + exported.join("\n\n---\n\n") + "\n";
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "asmer-ai-conversation-" + new Date().toISOString().slice(0,10) + ".md";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Conversation exported as Markdown.");
+});
 
 $("chatForm").addEventListener("submit", (event) => { event.preventDefault(); sendMessage(); });
 $("messageInput").addEventListener("input", (event) => {
