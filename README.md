@@ -43,4 +43,4 @@ Workers AI usage is subject to Cloudflare's current plan limits and pricing. Do 
 
 ## Legacy files
 
-The old FastAPI/Render files are retained for reference only. They are not used by the Cloudflare Worker deployment. The active frontend is self-contained in `static/index.html`; the old `static/app.js` and `static/styles.css` copies have been removed to prevent two competing frontends.
+The old FastAPI/Render backend and its dependency/deployment files were removed from this Cloudflare Worker branch so there is one active backend. The active frontend is self-contained in `static/index.html`; duplicate `static/app.js` and `static/styles.css` copies were also removed. A committed local SQLite database and Python bytecode cache were removed from this branch.
