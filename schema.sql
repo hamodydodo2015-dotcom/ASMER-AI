@@ -112,3 +112,64 @@ on public.user_memory to authenticated;
 
 grant usage, select
 on sequence public.messages_id_seq to authenticated;
+
+
+-- Daily image-generation quota. The security-definer RPC checks auth.uid()
+-- and serializes reservations per account to prevent parallel-request bypass.
+create table if not exists public.ai_usage (
+    id bigint generated always as identity primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
+    feature text not null check (feature in ('image')),
+    created_at timestamptz not null default now()
+);
+
+create index if not exists ai_usage_user_feature_date_idx
+on public.ai_usage(user_id, feature, created_at desc);
+
+alter table public.ai_usage enable row level security;
+
+create or replace function public.reserve_ai_usage(
+    p_feature text,
+    p_daily_limit integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    v_user_id uuid := auth.uid();
+    v_used integer;
+    v_day_start timestamptz := date_trunc('day', timezone('utc', now())) at time zone 'utc';
+begin
+    if v_user_id is null then
+        raise exception 'Authentication required';
+    end if;
+    if p_feature <> 'image' then
+        raise exception 'Unsupported usage feature';
+    end if;
+    if p_daily_limit < 1 or p_daily_limit > 5 then
+        raise exception 'Invalid daily limit';
+    end if;
+
+    perform pg_advisory_xact_lock(hashtextextended(v_user_id::text || ':' || p_feature, 0));
+
+    select count(*)::integer into v_used
+    from public.ai_usage
+    where user_id = v_user_id
+      and feature = p_feature
+      and created_at >= v_day_start;
+
+    if v_used >= p_daily_limit then
+        return false;
+    end if;
+
+    insert into public.ai_usage(user_id, feature)
+    values (v_user_id, p_feature);
+
+    return true;
+end;
+$$;
+
+revoke all on function public.reserve_ai_usage(text, integer) from public;
+grant execute on function public.reserve_ai_usage(text, integer) to authenticated;

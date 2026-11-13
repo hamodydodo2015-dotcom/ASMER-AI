@@ -1,961 +1,835 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#080d13">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="ASMER AI — your intelligent workspace">
 <title>ASMER AI</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-:root {
-    --bg: #080d13;
-    --panel: #101923;
-    --panel2: #141f2b;
-    --border: #263443;
-    --text: #edf6ff;
-    --muted: #8b9aaa;
-    --accent: #39e6c1;
-    --accent2: #14b8a6;
-    --danger: #ff647c;
-}
-
-* { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    height: 100vh;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: Inter, Arial, sans-serif;
-}
-
-button, input, textarea { font: inherit; }
-button { cursor: pointer; }
-
-.app {
-    height: 100vh;
-    display: flex;
-}
-
-.sidebar {
-    width: 255px;
-    background: #0b121a;
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 20px 14px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    font-size: 21px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    margin-bottom: 30px;
-}
-
-.logo {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), #168eae);
-    display: grid;
-    place-items: center;
-    color: #061511;
-    font-weight: 900;
-}
-
-.new-chat, .nav-button {
-    width: 100%;
-    padding: 13px;
-    border-radius: 11px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    text-align: left;
-    margin-bottom: 10px;
-    transition: .2s;
-}
-
-.new-chat:hover, .nav-button:hover {
-    border-color: var(--accent);
-    background: var(--panel2);
-}
-
-.sidebar-label {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1.5px;
-    margin: 24px 10px 12px;
-}
-
-.history {
-    color: var(--muted);
-    font-size: 13px;
-    padding: 10px;
-}
-
-.profile {
-    margin-top: auto;
-    padding: 13px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.avatar {
-    width: 36px;
-    height: 36px;
-    background: #1c3942;
-    color: var(--accent);
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-weight: bold;
-}
-
-.profile-info { min-width: 0; flex: 1; }
-.profile-info strong { display: block; font-size: 13px; }
-.profile-info small { color: var(--muted); }
-
-.main {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.topbar {
-    height: 65px;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 25px;
-}
-
-.model-label {
-    color: var(--accent);
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.top-actions { display: flex; gap: 10px; }
-
-.small-button {
-    padding: 9px 13px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 9px;
-}
-
-.content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    padding: 35px 20px;
-}
-
-.welcome {
-    margin: auto;
-    text-align: center;
-    max-width: 650px;
-    width: 100%;
-}
-
-.orb {
-    width: 85px;
-    height: 85px;
-    border-radius: 28px;
-    margin: 0 auto 25px;
-    background: radial-gradient(circle at 30% 25%, #b1fff0, #39e6c1 40%, #087b86);
-    box-shadow: 0 0 65px #39e6c133;
-    display: grid;
-    place-items: center;
-    color: #05251e;
-    font-size: 35px;
-    font-weight: 900;
-}
-
-.welcome h1 {
-    font-size: clamp(30px, 5vw, 46px);
-    margin: 0 0 12px;
-}
-
-.welcome h1 span { color: var(--accent); }
-
-.welcome p {
-    color: var(--muted);
-    line-height: 1.7;
-}
-
-.prompt-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 32px;
-}
-
-.prompt-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 13px;
-    text-align: left;
-    padding: 16px;
-    transition: .2s;
-}
-
-.prompt-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
-
-.prompt-card strong { display: block; margin-bottom: 7px; }
-.prompt-card small { color: var(--muted); }
-
-.messages {
-    max-width: 850px;
-    width: 100%;
-    margin: 0 auto;
-}
-
-.message {
-    display: flex;
-    gap: 13px;
-    margin: 20px 0;
-    align-items: flex-start;
-}
-
-.message-avatar {
-    flex-shrink: 0;
-    width: 35px;
-    height: 35px;
-    border-radius: 11px;
-    background: var(--panel2);
-    display: grid;
-    place-items: center;
-    color: var(--accent);
-    font-weight: bold;
-}
-
-.message-body {
-    line-height: 1.75;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    padding-top: 5px;
-}
-
-.message.user .message-avatar {
-    background: #24384a;
-    color: white;
-}
-
-.composer-area {
-    flex-shrink: 0;
-    position: relative;
-    z-index: 2;
-    padding: 14px 20px 20px;
-    background: linear-gradient(transparent, var(--bg) 20%);
-}
-
-.composer {
-    max-width: 850px;
-    margin: auto;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 17px;
-    padding: 12px;
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
-}
-
-.composer:focus-within { border-color: var(--accent); }
-
-#messageInput {
-    flex: 1;
-    min-width: 0;
-    resize: none;
-    max-height: 150px;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--text);
-    padding: 10px;
-    line-height: 1.5;
-}
-
-#messageInput::placeholder { color: #718294; }
-
-.send-button {
-    width: 43px;
-    height: 43px;
-    border: none;
-    border-radius: 12px;
-    background: var(--accent);
-    color: #04231b;
-    font-weight: 900;
-}
-
-.send-button:disabled { opacity: .45; cursor: not-allowed; }
-
-.disclaimer {
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 10px;
-}
-
-.hidden { display: none !important; }
-
-/* AUTHENTICATION */
-
-.auth-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: #070c12;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    overflow-y: auto;
-}
-
-.auth-card {
-    width: 100%;
-    max-width: 420px;
-    background: #101923;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 30px;
-    box-shadow: 0 25px 100px #0008;
-}
-
-.auth-brand { text-align: center; margin-bottom: 25px; }
-.auth-brand .logo { margin: 0 auto 13px; }
-.auth-brand h1 { margin: 0; letter-spacing: 3px; }
-.auth-brand p { color: var(--muted); font-size: 13px; }
-
-.auth-card h2 { font-size: 23px; margin-bottom: 7px; }
-.auth-subtitle { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
-
-.auth-input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: #09121b;
-    color: white;
-    outline: none;
-}
-
-.auth-input:focus { border-color: var(--accent); }
-
-.primary-button {
-    width: 100%;
-    padding: 14px;
-    border: 0;
-    border-radius: 10px;
-    background: var(--accent);
-    color: #05231c;
-    font-weight: 800;
-    margin-top: 5px;
-}
-
-.auth-message {
-    min-height: 20px;
-    color: var(--accent);
-    font-size: 12px;
-    margin: 12px 0;
-    line-height: 1.5;
-}
-
-.auth-switch {
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-    margin: 17px 0;
-}
-
-.link-button {
-    color: var(--accent);
-    background: none;
-    border: none;
-    font-weight: bold;
-}
-
-.divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--muted);
-    font-size: 11px;
-    margin: 20px 0;
-}
-
-.divider::before, .divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-}
-
-.social-button {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    background: #0b141e;
-    border: 1px solid var(--border);
-    color: var(--text);
-    margin-bottom: 9px;
-    transition: .2s;
-}
-
-.social-button:hover { border-color: var(--accent); }
-
-@media(max-width:700px) {
-    .sidebar { width: 65px; padding: 15px 8px; }
-    .brand { justify-content: center; }
-    .brand-name, .sidebar-label, .new-chat span,
-    .nav-button span, .history, .profile-info { display: none; }
-    .new-chat, .nav-button { text-align: center; padding: 13px 5px; }
-    .profile { justify-content: center; padding: 8px 3px; }
-    .prompt-grid { grid-template-columns: 1fr; }
-    .topbar { padding: 0 13px; }
-    .content { padding: 25px 13px; }
-    .composer-area { padding: 10px 12px 14px; }
-}
+:root{color-scheme:dark;--bg:#050505;--panel:#101010;--panel2:#191919;--line:#303030;--text:#fff;--muted:#a5a5a5;--cyan:#fff;--blue:#ddd;--red:#f0f0f0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,Arial,sans-serif}
+button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}.hidden{display:none!important}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 12%,#16404b66,transparent 48%),var(--bg)}
+.auth-card,.recovery-card{width:min(430px,100%);padding:34px;border:1px solid var(--line);border-radius:22px;background:#0e1721;box-shadow:0 28px 90px #0008}
+.brand-mark,.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#83fff0,#20a9c4);color:#041518;font-weight:950;font-size:25px}
+.auth-brand{text-align:center;margin-bottom:28px}.auth-brand .brand-mark{margin:0 auto 13px}.auth-brand h1{margin:0;letter-spacing:3px}.auth-brand h1 span{color:var(--cyan)}.muted{color:var(--muted)}
+.auth-card h2{margin:0 0 5px;font-size:23px}.auth-card>p{margin:0 0 22px}
+.field-label{display:block;margin:14px 0 7px;color:#c9d7e2;font-size:13px}
+.field{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:#080f17;color:var(--text)}
+.field:focus{border-color:var(--cyan);outline:none}
+.primary{width:100%;margin-top:18px;padding:13px;border:0;border-radius:10px;background:linear-gradient(115deg,#75f3df,#30c5df);color:#041619;font-weight:850}
+.auth-note{min-height:22px;margin:13px 0;color:var(--cyan);font-size:13px;overflow-wrap:anywhere}
+.auth-switch{text-align:center;color:var(--muted);font-size:13px}.text-button{border:0;background:none;color:var(--cyan);font-weight:750;padding:5px}
+.forgot-row{text-align:right;margin-top:8px}.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:10px;letter-spacing:1px}.divider:before,.divider:after{content:"";height:1px;flex:1;background:var(--line)}
+.social-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.social{padding:11px;border:1px solid var(--line);border-radius:10px;background:#111d28;color:var(--text)}.social:hover{border-color:var(--cyan)}
+.app{display:flex;min-height:100vh}
+.sidebar{width:270px;flex:0 0 270px;display:flex;flex-direction:column;padding:20px 14px;background:#0b121a;border-right:1px solid var(--line)}
+.side-brand{display:flex;align-items:center;gap:11px;padding:2px 7px 25px}.side-brand .logo{width:39px;height:39px;font-size:21px}.side-brand strong{letter-spacing:2px}.side-brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}
+.new-chat{width:100%;padding:13px;border:1px solid #28606a;border-radius:11px;background:#102a33;color:var(--cyan);text-align:left;font-weight:700}.side-label{margin:27px 10px 10px;color:#657b8d;font-size:10px;font-weight:850;letter-spacing:1.5px}
+.history-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;min-height:80px;max-height:calc(100vh - 300px)}
+.history-row{display:flex;align-items:center;gap:4px}.history-open{flex:1;min-width:0;padding:10px;border:0;border-radius:8px;background:transparent;color:#b6c5d0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}.history-open:hover,.history-open.active{background:#172834;color:var(--cyan)}
+.history-delete{border:0;border-radius:7px;background:transparent;color:#738696;padding:7px}.history-delete:hover{background:#39202a;color:var(--red)}
+.side-bottom{margin-top:auto;padding-top:18px}.user-card{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:12px;background:#101a24}.avatar{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:50%;background:#17424a;color:var(--cyan);font-weight:850}.user-meta{flex:1;min-width:0}.user-meta strong,.user-meta small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.user-meta strong{font-size:12px}.user-meta small{color:var(--muted);font-size:10px}.icon-button{border:0;border-radius:8px;background:transparent;color:#9eb0bf;padding:8px}.icon-button:hover{background:#1d303d;color:var(--cyan)}
+.main{display:flex;flex:1;flex-direction:column;min-width:0;min-height:100vh}
+.topbar{height:66px;flex:0 0 66px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-bottom:1px solid var(--line);background:#0b121a}
+.topbar-title{font-weight:800}.status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.status-dot{width:7px;height:7px;border-radius:50%;background:#51e5a4;box-shadow:0 0 12px #51e5a4}
+.chat-area{display:flex;flex:1;flex-direction:column;min-height:0}
+.messages{flex:1;overflow-y:auto;padding:30px 22px 20px}
+.welcome{width:min(700px,100%);margin:8vh auto 35px;text-align:center}.welcome-mark{display:grid;place-items:center;width:72px;height:72px;margin:0 auto 20px;border-radius:23px;background:radial-gradient(circle at 30% 25%,#bafff4,#43dfcf 48%,#087f91);box-shadow:0 0 55px #42dfcf33;color:#05221f;font-size:32px;font-weight:950}
+.eyebrow{color:var(--cyan);font-size:10px;font-weight:850;letter-spacing:3px}.welcome h1{margin:9px 0;font-size:clamp(32px,5vw,52px);line-height:1.12;letter-spacing:-1.8px}.welcome h1 span{color:var(--cyan)}.welcome p{color:var(--muted)}
+.prompt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:28px auto 0;max-width:590px}.prompt{padding:15px;border:1px solid var(--line);border-radius:13px;background:#101a24;color:var(--text);text-align:left;transition:.18s}.prompt:hover{border-color:var(--cyan);transform:translateY(-2px)}.prompt strong,.prompt small{display:block}.prompt small{margin-top:4px;color:var(--muted);font-size:12px}
+.message{display:flex;gap:13px;width:min(850px,100%);margin:0 auto 23px;align-items:flex-start}.message-avatar{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:11px;background:#142d37;color:var(--cyan);font-weight:850}.message.user .message-avatar{background:#263747;color:white}.message-body{min-width:0;flex:1;padding-top:4px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}.message-name{margin-bottom:5px;color:#a8bbc9;font-size:11px;font-weight:850;letter-spacing:.3px}
+.composer-wrap{flex:0 0 auto;padding:12px 18px 18px;background:linear-gradient(transparent,var(--bg) 15%)}
+.composer{display:flex;align-items:flex-end;gap:10px;width:min(850px,100%);margin:0 auto;padding:11px;border:1px solid #2b3e4e;border-radius:16px;background:#101923;box-shadow:0 12px 38px #0004}.composer:focus-within{border-color:var(--cyan)}
+#messageInput{flex:1;min-width:0;max-height:160px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:9px;line-height:1.5}#messageInput::placeholder{color:#718696}
+.send-button{width:42px;height:42px;border:0;border-radius:11px;background:var(--cyan);color:#031717;font-size:22px;font-weight:900}.send-button:disabled{opacity:.45}
+.disclaimer{text-align:center;margin-top:8px;color:#6d8190;font-size:10px}
+.toast{position:fixed;right:20px;bottom:20px;z-index:20;max-width:min(420px,calc(100vw - 40px));padding:12px 16px;border:1px solid #28616b;border-radius:11px;background:#112832;color:#d9fffa;box-shadow:0 12px 35px #0007}
+.recovery-screen{min-height:100vh;display:grid;place-items:center;padding:22px;background:var(--bg)}
+@media(max-width:760px){.sidebar{position:fixed;z-index:10;inset:0 auto 0 -285px;transition:left .2s;box-shadow:20px 0 60px #0008}.sidebar.open{left:0}.main{min-height:100vh}.topbar{padding:0 14px}.messages{padding:22px 14px}.composer-wrap{padding:10px 12px 14px}.welcome{margin-top:5vh}.prompt-grid{grid-template-columns:1fr}.auth-card,.recovery-card{padding:25px}}
+.auth-screen{background:radial-gradient(ellipse at 50% 10%,#ffffff12,transparent 52%),#050505}
+.auth-card,.recovery-card{background:#0b0b0b;border-color:#303030}
+.brand-mark,.logo{background:#fff;color:#000}
+.primary,.send-button{background:#fff;color:#000}
+.text-button,.auth-note,.eyebrow,.welcome h1 span{color:#fff}
+.social,.prompt,.user-card,.composer,.topbar,.sidebar{background:#0b0b0b}
+.new-chat{border-color:#555;background:#171717;color:#fff}
+.welcome-mark{background:#fff;color:#000;box-shadow:0 0 55px #ffffff20}
+.status-dot{background:#fff;box-shadow:0 0 10px #ffffff80}
+.tool-nav{display:flex;align-items:center;gap:5px;overflow-x:auto}
+.tool-tab{border:1px solid transparent;border-radius:9px;padding:8px 11px;background:transparent;color:#aaa;font-size:12px;font-weight:750;white-space:nowrap}
+.tool-tab:hover,.tool-tab.active{border-color:#555;background:#202020;color:#fff}
+.tool-view{flex:1;min-height:0;overflow-y:auto;padding:34px clamp(16px,4vw,48px)}
+.tool-shell{width:min(850px,100%);margin:0 auto}
+.tool-shell h1{margin:0 0 8px;font-size:clamp(26px,4vw,38px);letter-spacing:-1px}
+.tool-shell>p{color:var(--muted);margin:0 0 24px}
+.tool-card{padding:20px;border:1px solid #303030;border-radius:16px;background:#0c0c0c;margin:16px 0}
+.tool-label{display:block;margin:0 0 8px;color:#ddd;font-size:13px;font-weight:750}
+.tool-input,.tool-textarea,.tool-select{width:100%;border:1px solid #333;border-radius:11px;background:#050505;color:#fff;padding:13px}
+.tool-textarea{min-height:125px;resize:vertical}
+.tool-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:13px}
+.tool-button{border:1px solid #555;border-radius:10px;padding:11px 16px;background:#fff;color:#000;font-weight:800}
+.tool-button.secondary{background:#151515;color:#fff}
+.tool-button:disabled{opacity:.5;cursor:wait}
+.tool-status{min-height:22px;margin-top:12px;color:#bbb;font-size:13px}
+.generated-image{display:block;width:100%;max-height:640px;object-fit:contain;margin-top:18px;border:1px solid #333;border-radius:13px;background:#000}
+.video-preview{width:100%;max-height:520px;margin-top:16px;background:#000;border:1px solid #333;border-radius:12px}
+.tool-note{color:#999;font-size:12px;line-height:1.6;margin-top:12px}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.version-pill{display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid #444;border-radius:999px;color:#aaa;font-size:9px;font-weight:800;letter-spacing:.8px;vertical-align:middle}
+.topbar-action{border:1px solid #444;border-radius:9px;background:#111;color:#fff;padding:8px 11px;font-size:11px;font-weight:750}
+.topbar-action:hover{background:#fff;color:#000}
+.message-tools{display:flex;gap:7px;margin-top:9px}
+.message-copy{border:1px solid #383838;border-radius:7px;background:#111;color:#bbb;padding:5px 9px;font-size:10px}
+.message-copy:hover{border-color:#888;color:#fff}
+.message-copy:disabled{opacity:.5;cursor:default}
+@media(max-width:900px){.topbar{gap:10px}.tool-nav{max-width:58vw}.tool-tab{padding:7px 8px}}
+@media(max-width:620px){.tool-grid{grid-template-columns:1fr}.tool-view{padding:22px 14px}.topbar-title{display:none}.tool-nav{max-width:72vw}.tool-tab{font-size:11px;padding:7px}}
 </style>
 </head>
-
 <body>
-
-<!-- AUTH SCREEN -->
 <section class="auth-screen" id="authScreen">
-    <div class="auth-card">
-        <div class="auth-brand">
-            <div class="logo">A</div>
-            <h1>ASMER AI</h1>
-            <p>Your intelligent workspace</p>
-        </div>
-
-        <h2 id="authTitle">Welcome back</h2>
-        <p class="auth-subtitle" id="authSubtitle">
-            Sign in to continue to ASMER AI.
-        </p>
-
-        <form id="authForm">
-            <input class="auth-input hidden" id="nameInput"
-                type="text" placeholder="Your name" autocomplete="name">
-
-            <input class="auth-input" id="emailInput"
-                type="email" placeholder="Email address"
-                autocomplete="email" required>
-
-            <input class="auth-input" id="passwordInput"
-                type="password" placeholder="Password"
-                autocomplete="current-password" required minlength="6">
-
-            <button class="primary-button" id="authSubmit" type="submit">
-                Sign In
-            </button>
-        </form>
-
-        <div class="auth-message" id="authMessage"></div>
-
-        <div class="auth-switch">
-            <span id="switchText">Don't have an account?</span>
-            <button class="link-button" id="switchAuth" type="button">
-                Create account
-            </button>
-        </div>
-
-        <div class="divider">OR CONTINUE WITH</div>
-
-        <button class="social-button" onclick="socialLogin('google')">
-            Continue with Google
-        </button>
-        <button class="social-button" onclick="socialLogin('azure')">
-            Continue with Microsoft
-        </button>
-        <button class="social-button" onclick="socialLogin('apple')">
-            Continue with Apple
-        </button>
-        <button class="social-button" onclick="socialLogin('github')">
-            Continue with GitHub
-        </button>
-    </div>
+  <div class="auth-card">
+    <div class="auth-brand"><div class="brand-mark">A</div><h1>ASMER <span>AI</span></h1><p class="muted">Your intelligent workspace</p></div>
+    <h2 id="authTitle">Welcome back</h2><p class="muted" id="authSubtitle">Sign in to continue to ASMER AI.</p>
+    <form id="authForm">
+      <div id="nameWrap" class="hidden"><label class="field-label" for="nameInput">Your name</label><input class="field" id="nameInput" type="text" maxlength="60" autocomplete="name" placeholder="Your name"></div>
+      <label class="field-label" for="emailInput">Email address</label><input class="field" id="emailInput" class="field" type="email" maxlength="254" autocomplete="email" required placeholder="you@example.com">
+      <label class="field-label" for="passwordInput">Password</label><input class="field" id="passwordInput" type="password" minlength="10" maxlength="128" autocomplete="current-password" required placeholder="At least 10 characters">
+      <div style="text-align:right;margin-top:5px"><button class="text-button" id="togglePassword" type="button">Show password</button></div>
+      <div id="confirmPasswordWrap" class="hidden"><label class="field-label" for="confirmPassword">Confirm password</label><input class="field" id="confirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Enter your password again"></div>
+      <div class="forgot-row" id="forgotRow"><button class="text-button" id="forgotButton" type="button">Forgot password?</button></div>
+      <button class="primary" id="authSubmit" type="submit">Sign in</button>
+    </form>
+    <div class="auth-note" id="authMessage" role="status" aria-live="polite"></div>
+    <div id="resendWrap" class="hidden"><button class="text-button" id="resendConfirmation" type="button">Resend confirmation email</button></div>
+    <div class="auth-switch"><span id="switchText">Don't have an account?</span> <button class="text-button" id="switchAuth" type="button">Create account</button></div>
+    <div class="divider">OPTIONAL SOCIAL SIGN-IN</div>
+    <div class="social-row"><button class="social" type="button" data-provider="google">Google</button><button class="social" type="button" data-provider="github">GitHub</button><button class="social" type="button" data-provider="twitch">Twitch</button></div>
+  </div>
 </section>
 
-<!-- MAIN APPLICATION -->
-<div class="app hidden" id="app">
+<section class="recovery-screen hidden" id="recoveryScreen">
+  <div class="recovery-card"><div class="auth-brand"><div class="brand-mark">A</div><h1>ASMER <span>AI</span></h1></div><h2>Choose a new password</h2><p class="muted">Use at least 8 characters.</p>
+    <form id="recoveryForm"><label class="field-label" for="newPassword">New password</label><input class="field" id="newPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><button class="primary" id="recoverySubmit" type="submit">Update password</button></form>
+    <div class="auth-note" id="recoveryMessage" role="status"></div>
+  </div>
+</section>
 
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="logo">A</div>
-            <span class="brand-name">ASMER</span>
+<div class="app hidden" id="appScreen">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-brand"><div class="logo">A</div><div><strong>ASMER AI</strong><small>INTELLIGENT WORKSPACE</small></div><button class="icon-button" id="closeSidebar" type="button" aria-label="Close menu">×</button></div>
+    <button class="new-chat" id="newChat" type="button">＋ &nbsp; New chat</button>
+    <div class="side-label">YOUR CONVERSATIONS</div>
+    <div class="history-list" id="historyList"></div>
+    <div class="side-bottom"><div class="user-card"><div class="avatar" id="userAvatar">A</div><div class="user-meta"><strong id="userName">ASMER User</strong><small id="userEmail">Signed in</small></div><button class="icon-button" id="logoutButton" type="button" title="Sign out" aria-label="Sign out">↗</button></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="icon-button" id="openSidebar" type="button" aria-label="Open menu">☰</button><div class="topbar-title">ASMER AI <span class="version-pill">V2.2.0</span></div></div><nav class="tool-nav" aria-label="Workspace tools"><button class="tool-tab active" data-view="chat" type="button">Chat</button><button class="tool-tab" data-view="image" type="button">Images</button><button class="tool-tab" data-view="video" type="button">Video</button><button class="tool-tab" data-view="files" type="button">Files</button></nav><div style="display:flex;align-items:center;gap:10px"><button class="topbar-action" id="exportChatButton" type="button" title="Export this conversation as Markdown">Export chat</button><div class="status"><span class="status-dot"></span><span>ONLINE</span></div></div></header>
+    <section class="chat-area view-panel" id="chatView">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome"><div class="welcome-mark">A</div><div class="eyebrow">WELCOME TO ASMER</div><h1>What will you <span>create today?</span></h1><p>Ask questions, explore ideas, learn new things, or build something useful.</p>
+          <div class="prompt-grid">
+            <button class="prompt" type="button" data-prompt="Help me build a professional website, step by step."><strong>✧ Build a website</strong><small>Plan and create a modern website.</small></button>
+            <button class="prompt" type="button" data-prompt="Explain artificial intelligence in simple terms, with examples."><strong>◈ Learn something</strong><small>Understand a difficult topic.</small></button>
+            <button class="prompt" type="button" data-prompt="Help me write clean JavaScript code and explain it."><strong>⌘ Write code</strong><small>Build and debug software.</small></button>
+            <button class="prompt" type="button" data-prompt="Give me five creative ideas for a technology startup."><strong>✦ Explore ideas</strong><small>Think through new possibilities.</small></button>
+          </div>
         </div>
+      </div>
+      <div class="composer-wrap"><form class="composer" id="chatForm"><textarea id="messageInput" rows="1" maxlength="12000" placeholder="Message ASMER AI..." aria-label="Message ASMER AI"></textarea><button class="send-button" id="sendButton" type="submit" aria-label="Send message">↑</button></form><div class="disclaimer">ASMER AI can make mistakes. Check important information.</div></div>
+    </section>
 
-        <button class="new-chat" id="newChat">
-            ✚ <span>New chat</span>
-        </button>
-
-        <div class="sidebar-label">WORKSPACE</div>
-        <button class="nav-button">✦ <span>AI Assistant</span></button>
-        <button class="nav-button">◷ <span>History</span></button>
-        <button class="nav-button">⚙ <span>Settings</span></button>
-
-        <div class="sidebar-label">RECENT CHATS</div>
-        <div class="history" id="historyText">No recent chats</div>
-
-        <div class="profile">
-            <div class="avatar" id="userAvatar">A</div>
-            <div class="profile-info">
-                <strong id="userName">ASMER User</strong>
-                <small id="userEmail">Signed in</small>
-            </div>
-            <button class="small-button" id="logoutButton"
-                title="Sign out">↗</button>
+    <section class="tool-view view-panel hidden" id="imageView">
+      <div class="tool-shell">
+        <div class="eyebrow">ASMER CREATIVE STUDIO</div><h1>Image generation</h1><p>Turn a detailed description into an original image.</p>
+        <div class="tool-card">
+          <label class="tool-label" for="imagePrompt">Describe the image you want</label>
+          <textarea class="tool-textarea" id="imagePrompt" maxlength="1800" placeholder="A cinematic black-and-white futuristic city at night, architectural photography, dramatic lighting..."></textarea>
+          <div class="tool-actions"><button class="tool-button" id="generateImage" type="button">Generate image</button><button class="tool-button secondary" id="downloadImage" type="button" disabled>Download image</button></div>
+          <div class="tool-status" id="imageStatus" role="status">Free-tier limit: up to 3 image requests per account per UTC day. Provider limits still apply.</div>
+          <img class="generated-image hidden" id="generatedImage" alt="Your generated ASMER AI image">
         </div>
-    </aside>
-
-    <main class="main">
-        <header class="topbar">
-            <strong>AI Workspace</strong>
-            <div class="top-actions">
-                <span class="model-label">● ASMER AI</span>
-            </div>
-        </header>
-
-        <section class="content" id="content">
-            <div class="welcome" id="welcome">
-                <div class="orb">A</div>
-                <h1>Meet <span>ASMER AI</span></h1>
-                <p>
-                    Your intelligent assistant for ideas, learning,
-                    coding, creativity and productivity.
-                </p>
-
-                <div class="prompt-grid">
-                    <button class="prompt-card"
-                        data-prompt="Help me create a professional website.">
-                        <strong>✧ Build something</strong>
-                        <small>Create websites, apps and projects.</small>
-                    </button>
-
-                    <button class="prompt-card"
-                        data-prompt="Explain artificial intelligence in simple terms.">
-                        <strong>◈ Learn something</strong>
-                        <small>Understand difficult topics.</small>
-                    </button>
-
-                    <button class="prompt-card"
-                        data-prompt="Help me write JavaScript code.">
-                        <strong>⌘ Write code</strong>
-                        <small>Get help with programming.</small>
-                    </button>
-
-                    <button class="prompt-card"
-                        data-prompt="Give me five creative startup ideas.">
-                        <strong>✦ Generate ideas</strong>
-                        <small>Explore new possibilities.</small>
-                    </button>
-                </div>
-            </div>
-
-            <div class="messages" id="messages"></div>
-        </section>
-
-        <footer class="composer-area">
-            <div class="composer">
-                <textarea id="messageInput" rows="1"
-                    placeholder="Message ASMER AI..."></textarea>
-                <button class="send-button" id="sendButton"
-                    title="Send message">↑</button>
-            </div>
-            <div class="disclaimer">
-                ASMER AI can make mistakes. Check important information.
-            </div>
-        </footer>
-    </main>
+        <p class="tool-note">Image generation uses Cloudflare Workers AI. The free Workers AI allocation is limited and resets daily; requests may stop when the free allowance is reached. Avoid enabling paid billing if you want to keep this project free.</p>
+      </div>
+    </section>
+    <section class="tool-view view-panel hidden" id="videoView">
+      <div class="tool-shell">
+        <div class="eyebrow">ASMER MOTION STUDIO</div><h1>Create a motion video</h1><p>Make a short animated clip from an image, right in your browser.</p>
+        <div class="tool-card">
+          <label class="tool-label" for="videoSource">Choose an image (or use your last generated image)</label>
+          <input class="tool-input" id="videoSource" type="file" accept="image/png,image/jpeg,image/webp">
+          <div class="tool-actions"><button class="tool-button" id="createMotionVideo" type="button">Create free motion clip</button></div>
+          <div class="tool-status" id="videoStatus" role="status">Creates a short zoom-and-pan WebM video locally in your browser. No video API or paid service is used.</div>
+          <video class="video-preview hidden" id="motionVideo" controls playsinline></video>
+          <div class="tool-actions"><a class="tool-button secondary hidden" id="downloadMotionVideo" download="asmer-motion.webm">Download video</a></div>
+        </div>
+        <div class="tool-card"><strong>AI text-to-video</strong><p class="tool-note">True generative video is not enabled in this free build. The available FLUX 3 Video service is charged per second, so ASMER will not call it or risk unexpected charges.</p></div>
+      </div>
+    </section>
+    <section class="tool-view view-panel hidden" id="filesView">
+      <div class="tool-shell">
+        <div class="eyebrow">ASMER DOCUMENT STUDIO</div><h1>Create a file</h1><p>Prepare a document or code file and download it to your device.</p>
+        <div class="tool-card">
+          <div class="tool-grid">
+            <div><label class="tool-label" for="fileName">File name</label><input class="tool-input" id="fileName" value="asmer-document" maxlength="80"></div>
+            <div><label class="tool-label" for="fileType">File type</label><select class="tool-select" id="fileType"><option value="txt">Text (.txt)</option><option value="md">Markdown (.md)</option><option value="html">HTML (.html)</option><option value="json">JSON (.json)</option><option value="csv">CSV (.csv)</option><option value="js">JavaScript (.js)</option><option value="css">CSS (.css)</option><option value="py">Python (.py)</option></select></div>
+          </div>
+          <label class="tool-label" for="fileContent" style="margin-top:18px">File content</label>
+          <textarea class="tool-textarea" id="fileContent" style="min-height:260px" placeholder="Write your content here, or ask ASMER AI in Chat and insert its latest answer."></textarea>
+          <div class="tool-actions"><button class="tool-button secondary" id="useLastAnswer" type="button">Insert latest AI answer</button><button class="tool-button" id="createFile" type="button">Create and download file</button></div>
+          <div class="tool-status" id="fileStatus" role="status"></div>
+        </div>
+        <p class="tool-note">Files are generated locally in your browser. This version supports TXT, Markdown, HTML, JSON, CSV, JavaScript, CSS and Python files. It does not upload your document to a server.</p>
+      </div>
+    </section>
+  </main>
 </div>
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-// ==========================================
-// ASMER AI CONFIGURATION
-// ==========================================
-
-const SUPABASE_URL =
-    "https://sygggzdyafmzbkziehbz.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_X0VAxyre9qW0KfDTeAFICA_6p--fjDk";
-
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-);
-
-// ==========================================
-// ELEMENTS
-// ==========================================
-
-const authScreen = document.getElementById("authScreen");
-const app = document.getElementById("app");
-const authForm = document.getElementById("authForm");
-const authTitle = document.getElementById("authTitle");
-const authSubtitle = document.getElementById("authSubtitle");
-const authSubmit = document.getElementById("authSubmit");
-const authMessage = document.getElementById("authMessage");
-const switchAuth = document.getElementById("switchAuth");
-const switchText = document.getElementById("switchText");
-const nameInput = document.getElementById("nameInput");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const messages = document.getElementById("messages");
-const messageInput = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
-const welcome = document.getElementById("welcome");
-const content = document.getElementById("content");
-
-let isSignUp = false;
+"use strict";
+const SUPABASE_URL = "https://sygggzdyafmzbkziehbz.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X0VAxyre9qW0KfDTeAFICA_6p--fjDk";
+// Keep hosted authentication flows away from localhost.
+const AUTH_REDIRECT_URL = "https://asmer-ai.hamody-dodo2015.workers.dev/";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+const $ = (id) => document.getElementById(id);
+let authMode = "login";
 let currentUser = null;
+let currentChatId = null;
 let isSending = false;
+let recoveryMode = false;
+let toastTimer = null;
+let lastAssistantResponse = "";
+let lastGeneratedImageDataUrl = "";
+let lastMotionVideoUrl = "";
 
-// ==========================================
-// AUTHENTICATION
-// ==========================================
-
-function showAuthMessage(message) {
-    authMessage.textContent = message || "";
+function showAuthMessage(message) { $("authMessage").textContent = message || ""; }
+function toast(message) {
+  const node = $("toast");
+  node.textContent = message;
+  node.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => node.classList.add("hidden"), 3200);
 }
+function showAuth() {
+  $("appScreen").classList.add("hidden");
+  $("recoveryScreen").classList.add("hidden");
+  $("authScreen").classList.remove("hidden");
+}
+function showApp(user) {
+  currentUser = user;
+  $("authScreen").classList.add("hidden");
+  $("recoveryScreen").classList.add("hidden");
+  $("appScreen").classList.remove("hidden");
+  const displayName = user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name) || (user.email || "ASMER User").split("@")[0];
+  $("userName").textContent = displayName;
+  $("userEmail").textContent = user.email || "";
+  $("userAvatar").textContent = displayName.charAt(0).toUpperCase();
+  loadHistory();
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  const signingUp = mode === "signup";
+  $("authTitle").textContent = signingUp ? "Create your account" : "Welcome back";
+  $("authSubtitle").textContent = signingUp ? "Create an account to start using ASMER AI." : "Sign in to continue to ASMER AI.";
+  $("authSubmit").textContent = signingUp ? "Create account" : "Sign in";
+  $("switchText").textContent = signingUp ? "Already have an account?" : "Don't have an account?";
+  $("switchAuth").textContent = signingUp ? "Sign in" : "Create account";
+  $("nameWrap").classList.toggle("hidden", !signingUp);
+  $("confirmPasswordWrap").classList.toggle("hidden", !signingUp);
+  $("confirmPassword").required = signingUp;
+  $("confirmPassword").value = "";
+  $("nameInput").required = signingUp;
+  $("passwordInput").autocomplete = signingUp ? "new-password" : "current-password";
+  $("forgotRow").classList.toggle("hidden", signingUp);
+  showAuthMessage("");
+  $("resendWrap").classList.add("hidden");
+}
+$("switchAuth").addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
+$("togglePassword").addEventListener("click", () => {
+  const field = $("passwordInput");
+  const reveal = field.type === "password";
+  field.type = reveal ? "text" : "password";
+  $("togglePassword").textContent = reveal ? "Hide password" : "Show password";
+});
 
-function updateUserInterface(user) {
-    currentUser = user;
-
-    if (user) {
-        authScreen.classList.add("hidden");
-        app.classList.remove("hidden");
-
-        const displayName =
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.email?.split("@")[0] ||
-            "ASMER User";
-
-        document.getElementById("userName").textContent = displayName;
-        document.getElementById("userEmail").textContent = user.email || "";
-        document.getElementById("userAvatar").textContent =
-            displayName.charAt(0).toUpperCase();
+$("authForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = $("emailInput").value.trim().toLowerCase();
+  const password = $("passwordInput").value;
+  const name = $("nameInput").value.trim();
+  if (authMode === "signup" && password !== $("confirmPassword").value) {
+    showAuthMessage("Your passwords do not match.");
+    $("confirmPassword").focus();
+    return;
+  }
+  if (authMode === "signup" && password.length < 10) {
+    showAuthMessage("For better account security, use at least 10 characters.");
+    $("passwordInput").focus();
+    return;
+  }
+  $("authSubmit").disabled = true;
+  showAuthMessage("Please wait...");
+  try {
+    if (authMode === "signup") {
+      const result = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { full_name: name }, emailRedirectTo: AUTH_REDIRECT_URL }
+      });
+      if (result.error) throw result.error;
+      if (result.data.session) {
+        showApp(result.data.session.user);
+        toast("Your ASMER account is ready.");
+      } else {
+        showAuthMessage("Account created. Check your inbox and spam folder for the confirmation email, then return here to sign in.");
+        $("resendWrap").classList.remove("hidden");
+      }
     } else {
-        app.classList.add("hidden");
-        authScreen.classList.remove("hidden");
+      const result = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+      if (result.error) throw result.error;
+      showApp(result.data.user);
+      toast("Signed in successfully.");
     }
-}
+  } catch (error) {
+    console.error("ASMER AUTH:", error);
+    showAuthMessage(error.message || "Authentication failed. Please try again.");
+  } finally {
+    $("authSubmit").disabled = false;
+  }
+});
 
-async function initializeAuth() {
+$("resendConfirmation").addEventListener("click", async () => {
+  const email = $("emailInput").value.trim().toLowerCase();
+  if (!email) { showAuthMessage("Enter your email address first."); return; }
+  const button = $("resendConfirmation");
+  button.disabled = true;
+  showAuthMessage("Sending a new confirmation email...");
+  try {
+    const result = await supabaseClient.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: AUTH_REDIRECT_URL } });
+    if (result.error) throw result.error;
+    showAuthMessage("If this address has an unconfirmed account, a new confirmation email has been requested. Check your inbox and spam folder.");
+  } catch (error) {
+    showAuthMessage(error.message || "Could not resend the confirmation email.");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("forgotButton").addEventListener("click", async () => {
+  const email = $("emailInput").value.trim().toLowerCase();
+  if (!email) { showAuthMessage("Enter your email address first."); $("emailInput").focus(); return; }
+  $("forgotButton").disabled = true;
+  showAuthMessage("Sending password reset email...");
+  try {
+    const result = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT_URL });
+    if (result.error) throw result.error;
+    showAuthMessage("If an account exists for this address, a password reset email has been sent. Check your inbox and spam folder.");
+  } catch (error) {
+    showAuthMessage(error.message || "Could not send the reset email.");
+  } finally {
+    $("forgotButton").disabled = false;
+  }
+});
+
+document.querySelectorAll("[data-provider]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const provider = button.dataset.provider;
+    button.disabled = true;
+    showAuthMessage("Opening " + provider + " sign-in...");
     try {
-        const { data, error } =
-            await supabaseClient.auth.getSession();
-
-        if (error) throw error;
-
-        updateUserInterface(data.session?.user || null);
+      const result = await supabaseClient.auth.signInWithOAuth({
+        provider: provider,
+        options: { redirectTo: AUTH_REDIRECT_URL }
+      });
+      if (result.error) throw result.error;
     } catch (error) {
-        console.error("ASMER AUTH ERROR:", error);
-        updateUserInterface(null);
+      showAuthMessage(error.message || "Social sign-in is not configured yet.");
+      button.disabled = false;
     }
-}
+  });
+});
+
+$("recoveryForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const password = $("newPassword").value;
+  $("recoverySubmit").disabled = true;
+  $("recoveryMessage").textContent = "Updating password...";
+  try {
+    const result = await supabaseClient.auth.updateUser({ password: password });
+    if (result.error) throw result.error;
+    recoveryMode = false;
+    $("newPassword").value = "";
+    const session = await supabaseClient.auth.getSession();
+    if (session.data.session) showApp(session.data.session.user);
+    else showAuth();
+    toast("Password updated successfully.");
+  } catch (error) {
+    $("recoveryMessage").textContent = error.message || "Could not update password.";
+  } finally {
+    $("recoverySubmit").disabled = false;
+  }
+});
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
-    updateUserInterface(session?.user || null);
+  if (event === "PASSWORD_RECOVERY") {
+    recoveryMode = true;
+    $("authScreen").classList.add("hidden");
+    $("appScreen").classList.add("hidden");
+    $("recoveryScreen").classList.remove("hidden");
+    return;
+  }
+  if (event === "SIGNED_OUT") {
+    currentUser = null;
+    currentChatId = null;
+    showAuth();
+    return;
+  }
+  if (session && !recoveryMode) {
+    currentUser = session.user;
+    $("authScreen").classList.add("hidden");
+    $("appScreen").classList.remove("hidden");
+    const displayName = session.user.user_metadata && (session.user.user_metadata.full_name || session.user.user_metadata.name) || (session.user.email || "ASMER User").split("@")[0];
+    $("userName").textContent = displayName;
+    $("userEmail").textContent = session.user.email || "";
+    $("userAvatar").textContent = displayName.charAt(0).toUpperCase();
+    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") setTimeout(loadHistory, 0);
+  }
+});
+
+async function initializeAuth() {
+  try {
+    const result = await supabaseClient.auth.getSession();
+    if (result.error) throw result.error;
+    if (result.data.session && !recoveryMode) showApp(result.data.session.user);
+    else showAuth();
+  } catch (error) {
+    console.error("ASMER SESSION:", error);
+    showAuth();
+  }
+}
+
+async function api(path, options) {
+  const opts = options || {};
+  const sessionResult = await supabaseClient.auth.getSession();
+  if (sessionResult.error) throw sessionResult.error;
+  const token = sessionResult.data.session && sessionResult.data.session.access_token;
+  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  const headers = Object.assign({ "Authorization": "Bearer " + token }, opts.headers || {});
+  if (opts.body) headers["Content-Type"] = "application/json";
+  const response = await fetch(path, Object.assign({}, opts, { headers: headers, credentials: "same-origin", cache: "no-store" }));
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401) {
+    await supabaseClient.auth.signOut({ scope: "local" });
+    throw new Error(data.error || "Please sign in again.");
+  }
+  if (!response.ok) throw new Error(data.error || "The server request failed.");
+  return data;
+}
+
+function appendMessage(role, content) {
+  if (role === "assistant" && content && content !== "Thinking...") lastAssistantResponse = content;
+  $("welcome").classList.add("hidden");
+  const row = document.createElement("div");
+  row.className = "message " + role;
+  const avatar = document.createElement("div");
+  avatar.className = "message-avatar";
+  avatar.textContent = role === "user" ? "U" : "A";
+  const body = document.createElement("div");
+  body.className = "message-body";
+  const name = document.createElement("div");
+  name.className = "message-name";
+  name.textContent = role === "user" ? "YOU" : "ASMER AI";
+  const text = document.createElement("div");
+  text.textContent = content;
+  body.append(name, text);
+  if (role === "assistant" && content && content !== "Thinking...") {
+    const tools = document.createElement("div");
+    tools.className = "message-tools";
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "message-copy";
+    copy.textContent = "Copy answer";
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text.textContent || "");
+        copy.textContent = "Copied";
+      } catch {
+        const helper = document.createElement("textarea");
+        helper.value = text.textContent || "";
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.select();
+        const copied = document.execCommand("copy");
+        helper.remove();
+        copy.textContent = copied ? "Copied" : "Select and copy";
+      }
+      setTimeout(() => { copy.textContent = "Copy answer"; }, 1600);
+    });
+    tools.append(copy);
+    body.append(tools);
+  }
+  row.append(avatar, body);
+  $("messages").appendChild(row);
+  $("messages").scrollTop = $("messages").scrollHeight;
+  return text;
+}
+
+function resetChat() {
+  currentChatId = null;
+  $("messages").querySelectorAll(".message").forEach((node) => node.remove());
+  $("welcome").classList.remove("hidden");
+  $("messageInput").value = "";
+  $("sidebar").classList.remove("open");
+  $("messageInput").focus();
+  document.querySelectorAll(".history-open").forEach((node) => node.classList.remove("active"));
+}
+
+async function loadHistory() {
+  if (!currentUser) return;
+  try {
+    const result = await api("/api/chats");
+    const list = $("historyList");
+    list.replaceChildren();
+    (result.chats || []).forEach((chat) => {
+      const row = document.createElement("div");
+      row.className = "history-row";
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "history-open" + (chat.id === currentChatId ? " active" : "");
+      open.textContent = chat.title || "New chat";
+      open.title = chat.title || "New chat";
+      open.addEventListener("click", () => openChat(chat.id));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "history-delete";
+      remove.textContent = "×";
+      remove.title = "Delete conversation";
+      remove.setAttribute("aria-label", "Delete conversation");
+      remove.addEventListener("click", () => deleteChat(chat.id));
+      row.append(open, remove);
+      list.appendChild(row);
+    });
+    if (!result.chats || result.chats.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "muted";
+      empty.style.cssText = "padding:10px;font-size:12px";
+      empty.textContent = "Your conversations will appear here.";
+      list.appendChild(empty);
+    }
+  } catch (error) {
+    console.error("ASMER HISTORY:", error);
+  }
+}
+
+async function openChat(id) {
+  try {
+    const result = await api("/api/chats/" + encodeURIComponent(id));
+    currentChatId = result.chat.id;
+    $("messages").querySelectorAll(".message").forEach((node) => node.remove());
+    $("welcome").classList.add("hidden");
+    (result.messages || []).forEach((message) => appendMessage(message.role, message.content));
+    $("sidebar").classList.remove("open");
+    await loadHistory();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function deleteChat(id) {
+  if (!window.confirm("Delete this conversation? This cannot be undone.")) return;
+  try {
+    await api("/api/chats/" + encodeURIComponent(id), { method: "DELETE" });
+    if (currentChatId === id) resetChat();
+    await loadHistory();
+    toast("Conversation deleted.");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function sendMessage(value) {
+  if (isSending) return;
+  const input = $("messageInput");
+  const message = String(value === undefined ? input.value : value).trim();
+  if (!message) return;
+  if (!currentUser) { showAuth(); showAuthMessage("Please sign in before chatting."); return; }
+  isSending = true;
+  $("sendButton").disabled = true;
+  input.value = "";
+  input.style.height = "auto";
+  appendMessage("user", message);
+  const answerNode = appendMessage("assistant", "Thinking...");
+  try {
+    const result = await api("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message: message, chat_id: currentChatId })
+    });
+    currentChatId = result.chat_id;
+    answerNode.textContent = result.response || "The AI returned an empty response.";
+    lastAssistantResponse = answerNode.textContent;
+    await loadHistory();
+  } catch (error) {
+    answerNode.textContent = "I couldn't complete that request.\n\n" + error.message;
+  } finally {
+    isSending = false;
+    $("sendButton").disabled = false;
+    input.focus();
+    $("messages").scrollTop = $("messages").scrollHeight;
+  }
+}
+
+
+$("exportChatButton").addEventListener("click", () => {
+  const rows = Array.from($("messages").querySelectorAll(".message"));
+  const exported = rows.map((row) => {
+    const role = row.classList.contains("user") ? "You" : "ASMER AI";
+    const content = row.querySelector(".message-body > div:nth-child(2)");
+    return content && content.textContent.trim() ? "## " + role + "\n\n" + content.textContent.trim() : "";
+  }).filter(Boolean);
+  if (!exported.length) { toast("There is no conversation to export yet."); return; }
+  const markdown = "# ASMER AI conversation\n\n" + exported.join("\n\n---\n\n") + "\n";
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "asmer-ai-conversation-" + new Date().toISOString().slice(0,10) + ".md";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Conversation exported as Markdown.");
+});
+
+$("chatForm").addEventListener("submit", (event) => { event.preventDefault(); sendMessage(); });
+$("messageInput").addEventListener("input", (event) => {
+  event.target.style.height = "auto";
+  event.target.style.height = Math.min(event.target.scrollHeight, 160) + "px";
+});
+$("messageInput").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); }
+});
+$("newChat").addEventListener("click", resetChat);
+$("logoutButton").addEventListener("click", async () => {
+  const button = $("logoutButton");
+  button.disabled = true;
+  try {
+    const result = await supabaseClient.auth.signOut();
+    if (result.error) {
+      console.warn("ASMER remote sign-out failed; clearing this browser session.", result.error);
+      const localResult = await supabaseClient.auth.signOut({ scope: "local" });
+      if (localResult.error) throw localResult.error;
+    }
+    currentChatId = null;
+    currentUser = null;
+    showAuth();
+  } catch (error) {
+    toast(error.message || "Could not sign out.");
+  } finally {
+    button.disabled = false;
+  }
+});
+$("openSidebar").addEventListener("click", () => $("sidebar").classList.add("open"));
+$("closeSidebar").addEventListener("click", () => $("sidebar").classList.remove("open"));
+document.querySelectorAll(".prompt").forEach((button) => button.addEventListener("click", () => sendMessage(button.dataset.prompt)));
+
+function setWorkspaceView(view) {
+  const views = { chat: "chatView", image: "imageView", video: "videoView", files: "filesView" };
+  Object.entries(views).forEach(([key, id]) => {
+    $(id).classList.toggle("hidden", key !== view);
+  });
+  document.querySelectorAll(".tool-tab").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  const titles = { chat: "ASMER", image: "Image Studio", video: "Motion Studio", files: "File Studio" };
+  document.querySelector(".topbar-title").textContent = titles[view] || "ASMER";
+  $("sidebar").classList.remove("open");
+}
+document.querySelectorAll(".tool-tab").forEach((button) => {
+  button.addEventListener("click", () => setWorkspaceView(button.dataset.view));
+});
+
+$("generateImage").addEventListener("click", async () => {
+  const button = $("generateImage");
+  const prompt = $("imagePrompt").value.trim();
+  if (!prompt) { $("imageStatus").textContent = "Write a description first."; $("imagePrompt").focus(); return; }
+  button.disabled = true;
+  $("downloadImage").disabled = true;
+  $("imageStatus").textContent = "Creating your image. This can take a little while...";
+  try {
+    const result = await api("/api/image", { method: "POST", body: JSON.stringify({ prompt: prompt }) });
+    if (!result.image) throw new Error("The image service returned no image data.");
+    lastGeneratedImageDataUrl = "data:" + (result.mime_type || "image/jpeg") + ";base64," + result.image;
+    $("generatedImage").src = lastGeneratedImageDataUrl;
+    $("generatedImage").classList.remove("hidden");
+    $("downloadImage").disabled = false;
+    $("imageStatus").textContent = "Image created. Your account's daily image allowance has been used by one request.";
+  } catch (error) {
+    $("imageStatus").textContent = error.message || "Image generation failed.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("downloadImage").addEventListener("click", () => {
+  if (!lastGeneratedImageDataUrl) return;
+  const link = document.createElement("a");
+  link.href = lastGeneratedImageDataUrl;
+  link.download = "asmer-ai-image.jpg";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+});
+
+$("useLastAnswer").addEventListener("click", () => {
+  if (!lastAssistantResponse) {
+    $("fileStatus").textContent = "Ask ASMER AI a question in Chat first.";
+    return;
+  }
+  $("fileContent").value = lastAssistantResponse;
+  $("fileStatus").textContent = "Latest AI answer inserted. Review it before downloading.";
+});
+
+$("createFile").addEventListener("click", () => {
+  const rawName = $("fileName").value.trim() || "asmer-document";
+  const extension = $("fileType").value;
+  const content = $("fileContent").value;
+  if (!content.trim()) { $("fileStatus").textContent = "Add some content before creating the file."; return; }
+  if (content.length > 2000000) { $("fileStatus").textContent = "This file is too large. Keep it under 2 MB."; return; }
+  if (extension === "json") {
+    try { JSON.parse(content); }
+    catch { $("fileStatus").textContent = "This is not valid JSON yet. Fix the formatting and try again."; return; }
+  }
+  const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/^\.+/, "").slice(0, 70) || "asmer-document";
+  const filename = safeName.toLowerCase().endsWith("." + extension) ? safeName : safeName + "." + extension;
+  const mimeTypes = {
+    txt: "text/plain;charset=utf-8", md: "text/markdown;charset=utf-8",
+    html: "text/html;charset=utf-8", json: "application/json;charset=utf-8",
+    csv: "text/csv;charset=utf-8", js: "text/javascript;charset=utf-8",
+    css: "text/css;charset=utf-8", py: "text/x-python;charset=utf-8"
+  };
+  const blob = new Blob([content], { type: mimeTypes[extension] || "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $("fileStatus").textContent = "Created " + filename + " on your device.";
+});
+
+function loadVideoImage() {
+  return new Promise((resolve, reject) => {
+    const file = $("videoSource").files && $("videoSource").files[0];
+    let source = lastGeneratedImageDataUrl;
+    let objectUrl = "";
+    if (file) {
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+        reject(new Error("Choose a PNG, JPEG or WebP image."));
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        reject(new Error("Choose an image smaller than 10 MB."));
+        return;
+      }
+      objectUrl = URL.createObjectURL(file);
+      source = objectUrl;
+    }
+    if (!source) {
+      reject(new Error("Upload an image or create one in Image Studio first."));
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      reject(new Error("The selected image could not be opened."));
+    };
+    img.src = source;
+  });
+}
+
+$("createMotionVideo").addEventListener("click", async () => {
+  const button = $("createMotionVideo");
+  button.disabled = true;
+  $("videoStatus").textContent = "Preparing your browser-based motion clip...";
+  $("downloadMotionVideo").classList.add("hidden");
+  $("motionVideo").classList.add("hidden");
+  try {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error("This browser does not support local video recording. Try an up-to-date desktop Chrome or Edge browser.");
+    }
+    const img = await loadVideoImage();
+    const canvas = document.createElement("canvas");
+    canvas.width = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create the video canvas.");
+    const stream = canvas.captureStream(24);
+    const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+    if (!mimeType) throw new Error("This browser does not support WebM video export.");
+    const recorder = new MediaRecorder(stream, { mimeType: mimeType });
+    const chunks = [];
+    recorder.ondataavailable = (event) => { if (event.data && event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => { $("videoStatus").textContent = "The browser could not record the clip."; stream.getTracks().forEach((track) => track.stop()); button.disabled = false; };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      if (lastMotionVideoUrl) URL.revokeObjectURL(lastMotionVideoUrl);
+      lastMotionVideoUrl = URL.createObjectURL(blob);
+      $("motionVideo").src = lastMotionVideoUrl;
+      $("motionVideo").classList.remove("hidden");
+      $("downloadMotionVideo").href = lastMotionVideoUrl;
+      $("downloadMotionVideo").classList.remove("hidden");
+      $("videoStatus").textContent = "Your motion clip is ready. It was created locally and did not use a video API.";
+      stream.getTracks().forEach((track) => track.stop());
+      button.disabled = false;
+    };
+    const width = canvas.width, height = canvas.height;
+    const scale = Math.max(width / img.width, height / img.height);
+    const baseWidth = img.width * scale, baseHeight = img.height * scale;
+    const duration = 6500;
+    recorder.start(200);
+    const started = performance.now();
+    function drawFrame(now) {
+      const progress = Math.min(1, (now - started) / duration);
+      const zoom = 1 + 0.12 * progress;
+      const drawWidth = baseWidth * zoom, drawHeight = baseHeight * zoom;
+      const driftX = Math.sin(progress * Math.PI * 2) * 18;
+      const driftY = Math.cos(progress * Math.PI * 2) * 10;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, (width - drawWidth) / 2 + driftX, (height - drawHeight) / 2 + driftY, drawWidth, drawHeight);
+      ctx.fillStyle = "rgba(0,0,0,.30)";
+      ctx.fillRect(0, height - 74, width, 74);
+      ctx.fillStyle = "#fff";
+      ctx.font = "600 22px Arial";
+      ctx.fillText("ASMER AI", 34, height - 31);
+      $("videoStatus").textContent = "Rendering motion clip: " + Math.round(progress * 100) + "%";
+      if (progress < 1) requestAnimationFrame(drawFrame);
+      else setTimeout(() => { if (recorder.state !== "inactive") recorder.stop(); }, 250);
+    }
+    requestAnimationFrame(drawFrame);
+  } catch (error) {
+    $("videoStatus").textContent = error.message || "Could not create the video.";
+    button.disabled = false;
+  }
 });
 
 initializeAuth();
-
-// ==========================================
-// SIGN IN / SIGN UP
-// ==========================================
-
-switchAuth.addEventListener("click", () => {
-    isSignUp = !isSignUp;
-
-    authTitle.textContent = isSignUp
-        ? "Create your account"
-        : "Welcome back";
-
-    authSubtitle.textContent = isSignUp
-        ? "Join ASMER AI and start creating."
-        : "Sign in to continue to ASMER AI.";
-
-    authSubmit.textContent = isSignUp
-        ? "Create account"
-        : "Sign In";
-
-    switchText.textContent = isSignUp
-        ? "Already have an account?"
-        : "Don't have an account?";
-
-    switchAuth.textContent = isSignUp
-        ? "Sign in"
-        : "Create account";
-
-    nameInput.classList.toggle("hidden", !isSignUp);
-    nameInput.required = isSignUp;
-
-    passwordInput.autocomplete =
-        isSignUp ? "new-password" : "current-password";
-
-    showAuthMessage("");
-});
-
-authForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    const name = nameInput.value.trim();
-
-    authSubmit.disabled = true;
-    showAuthMessage("Please wait...");
-
-    try {
-        if (isSignUp) {
-            const { data, error } =
-                await supabaseClient.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: { full_name: name }
-                    }
-                });
-
-            if (error) throw error;
-
-            if (data.session) {
-                updateUserInterface(data.session.user);
-            } else {
-                showAuthMessage(
-                    "Account created! Check your email to confirm your account."
-                );
-            }
-        } else {
-            const { data, error } =
-                await supabaseClient.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-            if (error) throw error;
-
-            updateUserInterface(data.user);
-        }
-    } catch (error) {
-        console.error("ASMER AUTH ERROR:", error);
-        showAuthMessage(error.message || "Authentication failed.");
-    } finally {
-        authSubmit.disabled = false;
-    }
-});
-
-// ==========================================
-// SOCIAL LOGIN - CORRECTED
-// ==========================================
-
-async function socialLogin(provider) {
-    showAuthMessage("Connecting to " + provider + "...");
-
-    try {
-        const options = {
-            redirectTo: window.location.origin
-        };
-
-        if (provider === "azure") {
-            options.scopes = "email";
-        }
-
-        const { data, error } =
-            await supabaseClient.auth.signInWithOAuth({
-                provider,
-                options
-            });
-
-        if (error) throw error;
-
-    } catch (error) {
-        console.error("ASMER SOCIAL LOGIN ERROR:", error);
-        showAuthMessage(error.message || "Social login failed.");
-    }
-}
-
-// ==========================================
-// SIGN OUT
-// ==========================================
-
-document.getElementById("logoutButton")
-    .addEventListener("click", async () => {
-        const { error } = await supabaseClient.auth.signOut();
-
-        if (error) {
-            console.error("ASMER SIGN OUT ERROR:", error);
-            alert(error.message);
-        }
-    });
-
-// ==========================================
-// CHAT INTERFACE
-// ==========================================
-
-function addMessage(role, text) {
-    welcome.classList.add("hidden");
-
-    const message = document.createElement("div");
-    message.className = "message " + role;
-
-    const avatar = document.createElement("div");
-    avatar.className = "message-avatar";
-    avatar.textContent = role === "user" ? "U" : "A";
-
-    const body = document.createElement("div");
-    body.className = "message-body";
-    body.textContent = text;
-
-    message.appendChild(avatar);
-    message.appendChild(body);
-    messages.appendChild(message);
-
-    content.scrollTop = content.scrollHeight;
-
-    return body;
-}
-
-async function sendMessage(text) {
-    if (isSending) return;
-
-    text = String(text || "").trim();
-
-    if (!text) return;
-
-    if (!currentUser) {
-        showAuthMessage("Please sign in before chatting.");
-        updateUserInterface(null);
-        return;
-    }
-
-    isSending = true;
-    sendButton.disabled = true;
-
-    addMessage("user", text);
-
-    const answerElement = addMessage("assistant", "Thinking...");
-
-    messageInput.value = "";
-    messageInput.style.height = "auto";
-
-    try {
-        const { data: sessionData, error: sessionError } =
-            await supabaseClient.auth.getSession();
-
-        if (sessionError) throw sessionError;
-
-        const accessToken = sessionData.session?.access_token;
-
-        if (!accessToken) {
-            throw new Error("Your session expired. Please sign in again.");
-        }
-
-        const response = await fetch("/api/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + accessToken
-            },
-            body: JSON.stringify({
-                message: text
-            })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                result.error || "The AI server returned an error."
-            );
-        }
-
-        answerElement.textContent =
-            result.response || "The AI returned an empty response.";
-
-    } catch (error) {
-        console.error("ASMER CHAT ERROR:", error);
-
-        answerElement.textContent =
-            "Sorry, ASMER AI could not respond.\n\n" +
-            (error.message || "Unknown error") +
-            "\n\nCheck that your Cloudflare Worker AI backend is running.";
-    } finally {
-        isSending = false;
-        sendButton.disabled = false;
-        messageInput.focus();
-        content.scrollTop = content.scrollHeight;
-    }
-}
-
-sendButton.addEventListener("click", () => {
-    sendMessage(messageInput.value);
-});
-
-messageInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage(messageInput.value);
-    }
-});
-
-messageInput.addEventListener("input", () => {
-    messageInput.style.height = "auto";
-    messageInput.style.height =
-        Math.min(messageInput.scrollHeight, 150) + "px";
-});
-
-// ==========================================
-// NEW CHAT
-// ==========================================
-
-document.getElementById("newChat").addEventListener("click", () => {
-    messages.innerHTML = "";
-    welcome.classList.remove("hidden");
-    messageInput.value = "";
-    messageInput.focus();
-    document.getElementById("historyText").textContent = "No recent chats";
-});
-
-// ==========================================
-// SUGGESTED PROMPTS
-// ==========================================
-
-document.querySelectorAll(".prompt-card").forEach((button) => {
-    button.addEventListener("click", () => {
-        sendMessage(button.dataset.prompt);
-    });
-});
 </script>
-
 </body>
 </html>
