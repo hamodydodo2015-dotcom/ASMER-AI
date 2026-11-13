@@ -6,6 +6,10 @@ ASMER AI is a same-origin Cloudflare Worker application. The frontend is served 
 
 - Cloudflare Workers + static assets
 - Cloudflare Workers AI binding: `env.AI`
+- GLM-4.7-Flash reasoning model for chat
+- FLUX.1 [schnell] image generation with a per-account daily quota
+- Local browser-based motion-video export from still images
+- Local document/code file generation
 - Supabase Auth (email confirmation, password login, password reset, optional OAuth)
 - Supabase Postgres with Row Level Security for per-user conversations and messages
 
@@ -16,6 +20,8 @@ ASMER AI is a same-origin Cloudflare Worker application. The frontend is served 
 3. In Supabase Authentication → Providers, enable email sign-up. Configure Google or GitHub only if you want those optional buttons.
 4. For confirmation emails to reach addresses outside your Supabase organization, configure a verified custom SMTP sender in Supabase Auth settings. The frontend cannot fix SMTP delivery by itself.
 5. The Workers AI binding and public Supabase settings are defined in `wrangler.jsonc`. No Supabase service-role key or Cloudflare API token belongs in the browser or this repository.
+6. Run the updated `schema.sql` to create the secure daily image-usage quota function.
+7. The default Supabase email sender only sends to organization team addresses and is limited to 2 messages per hour. Sending confirmation and reset emails to all users requires a custom SMTP provider; free provider tiers are limited and may require a verified domain.
 
 ## Local development
 
@@ -37,9 +43,17 @@ The Worker requires the AI binding shown in `wrangler.jsonc`. Check `/api/health
 
 The Worker verifies every Supabase access token with Supabase Auth before serving private API routes. It then uses that same user's JWT for PostgREST calls, so the database's Row Level Security policies remain in force. Conversations and messages are stored in Supabase and are scoped to the signed-in user.
 
-## Usage and billing
+## Creative tools and free limits
 
-Workers AI usage is subject to Cloudflare's current plan limits and pricing. Do not assume inference is unlimited or always free. Review the model pricing and account limits before enabling the public chat endpoint.
+- Image generation uses `@cf/black-forest-labs/flux-1-schnell` and is capped at 3 requests per signed-in user per UTC day in the database. Cloudflare Workers AI currently includes a 10,000-neuron daily free allocation. On the Workers Free plan, requests stop when the allocation is exhausted; on a paid plan, usage beyond the free allocation can be billed.
+- The Video tab creates a simple zoom/pan WebM motion clip from a still image locally in the browser. It is not text-to-video AI.
+- True AI video generation is intentionally not connected in this free build. Cloudflare's FLUX 3 Video is billed per second (currently $0.15/second for HD), so calling it would not satisfy the no-cost requirement.
+- File creation runs locally in the browser and supports TXT, Markdown, HTML, JSON, CSV, JavaScript, CSS and Python. Files are not uploaded.
+- No service can guarantee unlimited free AI or unlimited email sending. Check each provider's current free quota and terms before launch.
+
+## Reasoning model
+
+The default chat model is Cloudflare's GLM-4.7-Flash, which is documented as supporting reasoning and function calling. This improves the reasoning-oriented setup but does not guarantee perfect answers or human-level intelligence.
 
 ## Legacy files
 
