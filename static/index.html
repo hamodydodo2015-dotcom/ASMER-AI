@@ -66,6 +66,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       <button class="primary" id="authSubmit" type="submit">Sign in</button>
     </form>
     <div class="auth-note" id="authMessage" role="status" aria-live="polite"></div>
+    <div id="resendWrap" class="hidden"><button class="text-button" id="resendConfirmation" type="button">Resend confirmation email</button></div>
     <div class="auth-switch"><span id="switchText">Don't have an account?</span> <button class="text-button" id="switchAuth" type="button">Create account</button></div>
     <div class="divider">OPTIONAL SOCIAL SIGN-IN</div>
     <div class="social-row"><button class="social" type="button" data-provider="google">Google</button><button class="social" type="button" data-provider="github">GitHub</button></div>
@@ -158,6 +159,7 @@ function setAuthMode(mode) {
   $("passwordInput").autocomplete = signingUp ? "new-password" : "current-password";
   $("forgotRow").classList.toggle("hidden", signingUp);
   showAuthMessage("");
+  $("resendWrap").classList.add("hidden");
 }
 $("switchAuth").addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
 
@@ -181,6 +183,7 @@ $("authForm").addEventListener("submit", async (event) => {
         toast("Your ASMER account is ready.");
       } else {
         showAuthMessage("Account created. Check your inbox and spam folder for the confirmation email, then return here to sign in.");
+        $("resendWrap").classList.remove("hidden");
       }
     } else {
       const result = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
@@ -193,6 +196,23 @@ $("authForm").addEventListener("submit", async (event) => {
     showAuthMessage(error.message || "Authentication failed. Please try again.");
   } finally {
     $("authSubmit").disabled = false;
+  }
+});
+
+$("resendConfirmation").addEventListener("click", async () => {
+  const email = $("emailInput").value.trim().toLowerCase();
+  if (!email) { showAuthMessage("Enter your email address first."); return; }
+  const button = $("resendConfirmation");
+  button.disabled = true;
+  showAuthMessage("Sending a new confirmation email...");
+  try {
+    const result = await supabaseClient.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: window.location.origin } });
+    if (result.error) throw result.error;
+    showAuthMessage("If this address has an unconfirmed account, a new confirmation email has been requested. Check your inbox and spam folder.");
+  } catch (error) {
+    showAuthMessage(error.message || "Could not resend the confirmation email.");
+  } finally {
+    button.disabled = false;
   }
 });
 
@@ -445,7 +465,11 @@ $("logoutButton").addEventListener("click", async () => {
   button.disabled = true;
   try {
     const result = await supabaseClient.auth.signOut();
-    if (result.error) throw result.error;
+    if (result.error) {
+      console.warn("ASMER remote sign-out failed; clearing this browser session.", result.error);
+      const localResult = await supabaseClient.auth.signOut({ scope: "local" });
+      if (localResult.error) throw localResult.error;
+    }
     currentChatId = null;
     currentUser = null;
     showAuth();
