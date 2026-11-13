@@ -2,131 +2,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080c12">
-  <meta name="description" content="ASMER AI - Your intelligent AI assistant">
-  <title>ASMER AI</title>
-  <link rel="stylesheet" href="/static/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASMER AI</title>
+<meta name="theme-color" content="#090d12">
+<style>
+*{box-sizing:border-box}
+:root{
+ --bg:#090d12;--panel:#10171f;--panel2:#151e28;
+ --border:#202c37;--text:#edf5fa;--muted:#8293a2;
+ --cyan:#39e5cf;--cyan2:#12bfae;
+}
+body{margin:0;background:var(--bg);color:var(--text);
+ font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;height:100vh;overflow:hidden}
+button,input,textarea{font:inherit}
+button{cursor:pointer;color:inherit}
+.app{height:100vh;display:flex}
+.sidebar{width:260px;background:#0c1219;border-right:1px solid var(--border);
+ display:flex;flex-direction:column;padding:22px 15px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:11px;padding:5px 8px 28px}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#42f1d7,#078f9a);
+ display:grid;place-items:center;color:#071316;font-weight:900;font-size:20px}
+.brand-name{font-weight:850;font-size:19px;letter-spacing:1.4px}
+.brand-name span{color:var(--cyan)}
+.new-chat{background:var(--cyan);color:#061411;border:0;border-radius:11px;
+ padding:13px;font-weight:750;margin-bottom:27px;transition:.2s}
+.new-chat:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.section-label{font-size:10px;letter-spacing:1.5px;color:#647482;
+ font-weight:800;padding:0 10px 12px}
+.nav{display:flex;align-items:center;gap:12px;padding:12px 11px;
+ border-radius:9px;color:#a9bac6;font-size:13px;margin-bottom:4px}
+.nav.active,.nav:hover{background:#17232c;color:var(--cyan)}
+.history{margin-top:28px;flex:1;overflow:auto}
+.history-item{padding:10px;border-radius:8px;color:#9aabb8;
+ font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item:hover{background:#17232c}
+.profile{border-top:1px solid var(--border);padding-top:16px;
+ display:flex;align-items:center;gap:11px}
+.avatar{width:35px;height:35px;border-radius:50%;background:#183e43;
+ display:grid;place-items:center;color:var(--cyan);font-weight:800}
+.profile small{display:block;color:var(--muted);margin-top:3px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:66px;border-bottom:1px solid var(--border);
+ display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.model{font-size:13px;color:#c7d4dd;font-weight:650}
+.status{font-size:11px;color:var(--cyan);background:#102b2a;
+ border:1px solid #17433e;padding:7px 11px;border-radius:20px}
+.content{flex:1;overflow-y:auto;display:flex;flex-direction:column;
+ align-items:center;padding:55px 22px 30px}
+.welcome{text-align:center;margin:auto 0 28px;max-width:680px}
+.orb{width:65px;height:65px;border-radius:21px;margin:0 auto 24px;
+ display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#55ffe2,#087e81);
+ box-shadow:0 0 50px #17d5c433;color:#06201e;font-size:29px;font-weight:900}
+h1{font-size:clamp(30px,5vw,47px);letter-spacing:-2px;margin:0 0 13px}
+h1 span{background:linear-gradient(90deg,#fff,#47e7d3);
+ -webkit-background-clip:text;background-clip:text;color:transparent}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.7}
+.prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;width:min(650px,100%);margin-bottom:26px}
+.prompt{background:var(--panel);border:1px solid var(--border);
+ border-radius:13px;padding:16px;text-align:left;transition:.2s}
+.prompt:hover{border-color:#238d83;background:#13211f;transform:translateY(-2px)}
+.prompt b{font-size:13px;display:block;margin-bottom:7px}
+.prompt small{font-size:11px;color:var(--muted);line-height:1.5}
+.chat{width:min(760px,100%);margin:0 auto}
+.messages{width:100%;display:flex;flex-direction:column;gap:20px}
+.message{display:flex;gap:12px;align-items:flex-start;line-height:1.7;
+ font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.message .avatar{flex-shrink:0}
+.message.user .avatar{background:#253341;color:white}
+.message p{margin:5px 0}
+.composer-area{padding:15px 22px 20px;background:linear-gradient(transparent,var(--bg) 20%)}
+.composer{width:min(760px,100%);margin:auto;background:var(--panel);
+ border:1px solid #30404d;border-radius:17px;padding:12px 13px;
+ box-shadow:0 15px 50px #0005}
+.composer:focus-within{border-color:#269e92;box-shadow:0 0 0 3px #28d7c014}
+textarea{width:100%;background:transparent;border:0;outline:0;color:var(--text);
+ resize:none;min-height:48px;max-height:150px;padding:8px;font-size:14px}
+.composer-bottom{display:flex;align-items:center;justify-content:space-between}
+.hint{font-size:10px;color:#72818e;padding-left:7px}
+.send{width:38px;height:38px;border:0;border-radius:11px;
+ background:var(--cyan);color:#061512;font-weight:900;font-size:18px}
+.send:hover{background:#74f8e6}
+.send:disabled{opacity:.4;cursor:not-allowed}
+.disclaimer{text-align:center;font-size:10px;color:#61717e;margin-top:12px}
+.mobile-menu{display:none;background:transparent;border:0;font-size:22px}
+@media(max-width:700px){
+ .sidebar{position:fixed;z-index:5;left:-270px;top:0;bottom:0;transition:.25s}
+ .sidebar.open{left:0}
+ .mobile-menu{display:block}
+ .topbar{padding:0 15px}
+ .content{padding:35px 16px 20px}
+ .prompts{grid-template-columns:1fr}
+ .composer-area{padding:12px}
+}
+</style>
 </head>
 <body>
-  <section id="authScreen" class="auth-screen">
-    <div class="auth-card">
-      <div class="brand-mark">A</div>
-      <h1>ASMER<span> AI</span></h1>
-      <p class="muted">Your intelligence. Your workspace.</p>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+ <div class="brand">
+  <div class="logo">A</div>
+  <div class="brand-name">ASMER<span> AI</span></div>
+ </div>
+ <button class="new-chat" id="newChat">＋ New conversation</button>
+ <div class="section-label">WORKSPACE</div>
+ <div class="nav active">✦ &nbsp; AI Assistant</div>
+ <div class="nav">◷ &nbsp; Recent chats</div>
+ <div class="nav">◇ &nbsp; Explore</div>
+ <div class="history">
+  <div class="section-label">YOUR HISTORY</div>
+  <div id="historyList"></div>
+ </div>
+ <div class="profile">
+  <div class="avatar">A</div>
+  <div><b style="font-size:13px">ASMER User</b><small>Free workspace</small></div>
+ </div>
+</aside>
 
-      <div class="auth-tabs">
-        <button id="loginTab" class="active">Login</button>
-        <button id="signupTab">Create account</button>
-      </div>
-
-      <form id="authForm">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="you@example.com" required>
-        <label>Password</label>
-        <input id="password" type="password" placeholder="At least 8 characters" minlength="8" required>
-        <button id="authSubmit" class="primary full" type="submit">Login</button>
-      </form>
-      <p id="authMessage" class="notice"></p>
-      <p class="tiny">By continuing, you agree to use ASMER AI responsibly.</p>
-    </div>
-  </section>
-
-  <div id="appScreen" class="app hidden">
-    <aside id="sidebar" class="sidebar">
-      <div class="side-brand">
-        <div class="small-logo">A</div>
-        <div><strong>ASMER AI</strong><small>INTELLIGENCE</small></div>
-        <button id="closeSidebar" class="icon-btn mobile-only">×</button>
-      </div>
-
-      <button id="newChat" class="new-chat">＋ New chat</button>
-
-      <div class="side-label">WORKSPACE</div>
-      <button class="nav-item active" data-page="chat">◈ <span>AI Chat</span></button>
-      <button class="nav-item" data-page="memory">◇ <span>Memory</span></button>
-      <button class="nav-item" data-page="settings">⚙ <span>Settings</span></button>
-
-      <div class="history-heading">RECENT CHATS</div>
-      <div id="historyList" class="history-list"></div>
-
-      <div class="side-bottom">
-        <div class="user-card">
-          <div class="avatar">A</div>
-          <div class="user-info"><strong id="userEmail">User</strong><small>ASMER account</small></div>
-          <button id="logoutBtn" class="icon-btn" title="Log out">↗</button>
-        </div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <button id="openSidebar" class="icon-btn mobile-only">☰</button>
-        <div class="top-title" id="pageTitle">AI Chat</div>
-        <div class="top-right">
-          <span class="online-dot"></span>
-          <span class="online-text">Cloud AI</span>
-          <button id="newChatTop" class="top-new">＋ New chat</button>
-        </div>
-      </header>
-
-      <section id="chatPage" class="page chat-page">
-        <div id="chatMessages" class="messages">
-          <div id="welcome" class="welcome">
-            <div class="welcome-icon">✦</div>
-            <p class="eyebrow">WELCOME TO ASMER</p>
-            <h1>What can I help<br><span>you build today?</span></h1>
-            <p class="muted">Ask questions, explore ideas, or write code.</p>
-            <div class="suggestions">
-              <button class="suggestion" data-prompt="Help me build a professional website">✧ Build a website</button>
-              <button class="suggestion" data-prompt="Explain artificial intelligence simply">◈ Learn something</button>
-              <button class="suggestion" data-prompt="Write a Python application for me">⌘ Write code</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="composer-wrap">
-          <form id="chatForm" class="composer">
-            <textarea id="messageInput" rows="1" placeholder="Message ASMER AI..." maxlength="12000"></textarea>
-            <div class="composer-bottom">
-              <div class="composer-tools">
-                <span class="model-label">✦ ASMER AI</span>
-                <span class="secure-label">Private workspace</span>
-              </div>
-              <button id="sendBtn" class="send-btn" type="submit">↑</button>
-            </div>
-          </form>
-          <p class="disclaimer">ASMER AI can make mistakes. Check important information.</p>
-        </div>
-      </section>
-
-      <section id="memoryPage" class="page content-page hidden">
-        <div class="content-card">
-          <div class="section-icon">◇</div>
-          <h1>Your memory</h1>
-          <p class="muted">Save information you want ASMER AI to use as context in future chats.</p>
-          <textarea id="memoryInput" class="memory-input" placeholder="Example: I am learning Python and building a game..."></textarea>
-          <button id="saveMemory" class="primary">Save memory</button>
-          <p id="memoryStatus" class="notice"></p>
-        </div>
-      </section>
-
-      <section id="settingsPage" class="page content-page hidden">
-        <div class="content-card">
-          <div class="section-icon">⚙</div>
-          <h1>Settings</h1>
-          <p class="muted">Your ASMER AI workspace.</p>
-          <div class="setting-row"><div><strong>Account</strong><small id="settingsEmail">Signed in</small></div><span class="status-pill">Active</span></div>
-          <div class="setting-row"><div><strong>AI provider</strong><small>Cloudflare Workers AI</small></div><span class="status-pill">Connected by server</span></div>
-          <div class="setting-row"><div><strong>Database</strong><small>Supabase</small></div><span class="status-pill">Connected by server</span></div>
-          <button id="settingsLogout" class="danger-btn">Log out</button>
-        </div>
-      </section>
-    </main>
+<main class="main">
+ <header class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+   <button class="mobile-menu" id="menu">☰</button>
+   <div class="model">ASMER AI <span style="color:var(--muted)">/ Assistant</span></div>
   </div>
+  <div class="status">● System online</div>
+ </header>
 
-  <div id="toast" class="toast"></div>
-  <script src="/static/app.js"></script>
+ <section class="content" id="content">
+  <div class="welcome" id="welcome">
+   <div class="orb">A</div>
+   <h1>Meet your new <span>AI assistant.</span></h1>
+   <div class="subtitle">Think bigger. Create faster. Discover more.<br>
+   Welcome to ASMER AI — your intelligent workspace.</div>
+  </div>
+  <div class="prompts" id="prompts">
+   <button class="prompt" data-prompt="Explain artificial intelligence in simple terms.">
+    <b>✧ Learn something</b><small>Understand complicated topics simply.</small>
+   </button>
+   <button class="prompt" data-prompt="Help me build a professional website.">
+    <b>⌘ Build a project</b><small>Plan and create your next big idea.</small>
+   </button>
+   <button class="prompt" data-prompt="Give me creative business ideas for a technology company.">
+    <b>◈ Explore ideas</b><small>Discover creative possibilities.</small>
+   </button>
+   <button class="prompt" data-prompt="Write a JavaScript program that creates a calculator.">
+    <b>⚡ Write code</b><small>Get help with programming.</small>
+   </button>
+  </div>
+  <div class="chat"><div class="messages" id="messages"></div></div>
+ </section>
+
+ <footer class="composer-area">
+  <form class="composer" id="chatForm">
+   <textarea id="input" placeholder="Message ASMER AI..." rows="1"></textarea>
+   <div class="composer-bottom">
+    <span class="hint">AI can make mistakes. Check important information.</span>
+    <button class="send" id="send" type="submit">↑</button>
+   </div>
+  </form>
+  <div class="disclaimer">POWERED BY ASMER TECHNOLOGY</div>
+ </footer>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const messages=$("messages"),input=$("input");
+let busy=false;
+
+function addMessage(role,text){
+ const item=document.createElement("div");
+ item.className="message "+role;
+ const avatar=document.createElement("div");
+ avatar.className="avatar";
+ avatar.textContent=role==="user"?"Y":"A";
+ const body=document.createElement("div");
+ const label=document.createElement("b");
+ label.style.fontSize="12px";
+ label.style.color=role==="user"?"#b9c9d5":"#45e4d0";
+ label.textContent=role==="user"?"You":"ASMER AI";
+ const p=document.createElement("p");
+ p.textContent=text;
+ body.append(label,p);
+ item.append(avatar,body);
+ messages.append(item);
+ $("welcome").style.display="none";
+ $("prompts").style.display="none";
+ $("content").scrollTop=$("content").scrollHeight;
+ return p;
+}
+async function sendMessage(text){
+ if(busy||!text.trim())return;
+ busy=true;$("send").disabled=true;
+ addMessage("user",text);
+ input.value="";
+ const answer=addMessage("assistant","Thinking...");
+ try{
+  const response=await fetch("/api/chat",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({message:text})
+  });
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"The AI service returned an error.");
+  answer.textContent=data.response||"I couldn't generate a response.";
+ }catch(error){
+  answer.textContent="ASMER AI couldn't connect to its AI service. Please check your Cloudflare AI setup. ("+error.message+")";
+ }
+ busy=false;$("send").disabled=false;
+ $("content").scrollTop=$("content").scrollHeight;
+}
+$("chatForm").addEventListener("submit",e=>{
+ e.preventDefault();sendMessage(input.value);
+});
+input.addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chatForm").requestSubmit()}
+});
+document.querySelectorAll(".prompt").forEach(button=>{
+ button.addEventListener("click",()=>sendMessage(button.dataset.prompt));
+});
+$("newChat").addEventListener("click",()=>{
+ messages.innerHTML="";
+ $("welcome").style.display="";
+ $("prompts").style.display="";
+});
+$("menu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
+</script>
 </body>
 </html>
