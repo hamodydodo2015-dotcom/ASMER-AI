@@ -1,4 +1,4 @@
-const DEFAULT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
+const DEFAULT_MODEL = "@cf/zai-org/glm-4.7-flash";
 const rateBuckets = new Map();
 
 class HttpError extends Error {
@@ -227,7 +227,7 @@ async function handleChat(request, env, auth) {
 
   const modelMessages = [{
     role: "system",
-    content: "You are ASMER AI, a helpful, careful and capable assistant. Be accurate, explain clearly, and never invent sources or claim tools you do not have."
+    content: "You are ASMER AI, a highly capable reasoning assistant. Think carefully before answering, check assumptions, break complex tasks into clear steps, and verify calculations where possible. Give the user a concise explanation of the key reasoning, not hidden private chain-of-thought. Be honest about uncertainty, never invent facts or sources, and adapt explanations to the user's level. Keep answers useful, safe, and well structured."
   }];
   (history || []).reverse().forEach((item) => {
     if ((item.role === "user" || item.role === "assistant") && typeof item.content === "string") {
@@ -278,6 +278,41 @@ async function handleChat(request, env, auth) {
   return json({ response: answer, chat_id: chatId });
 }
 
+
+async function handleImage(request, env, auth) {
+  if (!env.AI) throw new HttpError(503, "The Cloudflare Workers AI binding is missing.");
+  const body = await readJson(request);
+  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  if (!prompt) throw new HttpError(400, "Describe the image you want first.");
+  if (prompt.length > 1800) throw new HttpError(413, "Image prompts must be 1,800 characters or fewer.");
+  applyRateLimit(auth.user.id);
+
+  const reserved = await dbRequest(env, auth.token, "rpc/reserve_ai_usage", {
+    method: "POST",
+    body: JSON.stringify({ p_feature: "image", p_daily_limit: 3 })
+  });
+  if (reserved !== true) {
+    throw new HttpError(429, "You have reached the free limit of 3 image generations today. Try again after the daily reset.");
+  }
+
+  let result;
+  try {
+    result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", {
+      prompt: prompt,
+      steps: 4,
+      width: 1024,
+      height: 1024
+    });
+  } catch (error) {
+    console.error("ASMER IMAGE ERROR:", error);
+    throw new HttpError(502, "Image generation is temporarily unavailable or the free AI allowance has been reached.");
+  }
+  if (!result || typeof result.image !== "string" || !result.image) {
+    throw new HttpError(502, "The image model returned an empty image.");
+  }
+  return json({ image: result.image, mime_type: "image/jpeg" });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -297,6 +332,10 @@ export default {
         if (url.pathname === "/api/chat" && request.method === "POST") {
           const auth = await requireUser(request, env);
           return await handleChat(request, env, auth);
+        }
+        if (url.pathname === "/api/image" && request.method === "POST") {
+          const auth = await requireUser(request, env);
+          return await handleImage(request, env, auth);
         }
         if (url.pathname === "/api/chats" && request.method === "GET") {
           const auth = await requireUser(request, env);
