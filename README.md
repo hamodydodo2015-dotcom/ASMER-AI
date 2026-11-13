@@ -58,3 +58,32 @@ The default chat model is Cloudflare's GLM-4.7-Flash, which is documented as sup
 ## Legacy files
 
 The old FastAPI/Render backend and its dependency/deployment files were removed from this Cloudflare Worker branch so there is one active backend. The active frontend is self-contained in `static/index.html`; duplicate `static/app.js` and `static/styles.css` copies were also removed. A committed local SQLite database and Python bytecode cache were removed from this branch.
+
+ 
+## Google OAuth setup (important)
+
+The app sends OAuth, signup-confirmation and password-reset return links to the production site URL below, not the current browser origin (which could be `localhost`):
+
+```text
+https://asmer-ai.hamody-dodo2015.workers.dev/
+```
+
+Configure both sides of the OAuth redirect:
+
+1. In **Supabase → Authentication → URL Configuration**, set **Site URL** to the production URL above and add the exact same URL to **Redirect URLs**.
+2. In **Supabase → Authentication → Providers → Google**, enable Google and save the Google OAuth Client ID and Client Secret privately in the dashboard.
+3. In **Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Web Client**, add this exact URI under **Authorized redirect URIs**:
+
+   ```text
+   https://sygggzdyafmzbkziehbz.supabase.co/auth/v1/callback
+   ```
+
+4. Add the deployed ASMER URL under **Authorized JavaScript origins** if requested:
+
+   ```text
+   https://asmer-ai.hamody-dodo2015.workers.dev
+   ```
+
+5. Save changes and test Google sign-in from the deployed site. Google checks the **Supabase callback URI** against Authorized redirect URIs; it is not the same as the ASMER website URL. A `redirect_uri_mismatch` error means that callback URI is missing or differs by even one character.
+
+Never put the Google Client Secret in frontend code or commit it to GitHub. The app code cannot edit Google Cloud or Supabase dashboard settings automatically.
