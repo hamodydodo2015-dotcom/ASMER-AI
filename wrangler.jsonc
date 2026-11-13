@@ -1,12 +1,18 @@
 {
+  "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
   "name": "asmer-ai",
   "main": "src/index.js",
-  "compatibility_date": "2026-11-13",
+  "compatibility_date": "2026-11-14",
   "ai": {
     "binding": "AI"
   },
   "assets": {
     "directory": "./static",
     "binding": "ASSETS"
+  },
+  "vars": {
+    "SUPABASE_URL": "https://sygggzdyafmzbkziehbz.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_X0VAxyre9qW0KfDTeAFICA_6p--fjDk",
+    "ASMER_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct"
   }
 }
