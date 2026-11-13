@@ -25,7 +25,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .auth-note{min-height:22px;margin:13px 0;color:var(--cyan);font-size:13px;overflow-wrap:anywhere}
 .auth-switch{text-align:center;color:var(--muted);font-size:13px}.text-button{border:0;background:none;color:var(--cyan);font-weight:750;padding:5px}
 .forgot-row{text-align:right;margin-top:8px}.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:10px;letter-spacing:1px}.divider:before,.divider:after{content:"";height:1px;flex:1;background:var(--line)}
-.social-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.social{padding:11px;border:1px solid var(--line);border-radius:10px;background:#111d28;color:var(--text)}.social:hover{border-color:var(--cyan)}
+.social-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.social{padding:11px;border:1px solid var(--line);border-radius:10px;background:#111d28;color:var(--text)}.social:hover{border-color:var(--cyan)}
 .app{display:flex;min-height:100vh}
 .sidebar{width:270px;flex:0 0 270px;display:flex;flex-direction:column;padding:20px 14px;background:#0b121a;border-right:1px solid var(--line)}
 .side-brand{display:flex;align-items:center;gap:11px;padding:2px 7px 25px}.side-brand .logo{width:39px;height:39px;font-size:21px}.side-brand strong{letter-spacing:2px}.side-brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}
@@ -109,7 +109,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div id="resendWrap" class="hidden"><button class="text-button" id="resendConfirmation" type="button">Resend confirmation email</button></div>
     <div class="auth-switch"><span id="switchText">Don't have an account?</span> <button class="text-button" id="switchAuth" type="button">Create account</button></div>
     <div class="divider">OPTIONAL SOCIAL SIGN-IN</div>
-    <div class="social-row"><button class="social" type="button" data-provider="google">Google</button><button class="social" type="button" data-provider="github">GitHub</button></div>
+    <div class="social-row"><button class="social" type="button" data-provider="google">Google</button><button class="social" type="button" data-provider="github">GitHub</button><button class="social" type="button" data-provider="twitch">Twitch</button></div>
   </div>
 </section>
 
