@@ -93,6 +93,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       <div id="nameWrap" class="hidden"><label class="field-label" for="nameInput">Your name</label><input class="field" id="nameInput" type="text" maxlength="60" autocomplete="name" placeholder="Your name"></div>
       <label class="field-label" for="emailInput">Email address</label><input class="field" id="emailInput" class="field" type="email" maxlength="254" autocomplete="email" required placeholder="you@example.com">
       <label class="field-label" for="passwordInput">Password</label><input class="field" id="passwordInput" type="password" minlength="8" maxlength="128" autocomplete="current-password" required placeholder="At least 8 characters">
+      <div style="text-align:right;margin-top:5px"><button class="text-button" id="togglePassword" type="button">Show password</button></div>
+      <div id="confirmPasswordWrap" class="hidden"><label class="field-label" for="confirmPassword">Confirm password</label><input class="field" id="confirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Enter your password again"></div>
       <div class="forgot-row" id="forgotRow"><button class="text-button" id="forgotButton" type="button">Forgot password?</button></div>
       <button class="primary" id="authSubmit" type="submit">Sign in</button>
     </form>
@@ -233,6 +235,9 @@ function setAuthMode(mode) {
   $("switchText").textContent = signingUp ? "Already have an account?" : "Don't have an account?";
   $("switchAuth").textContent = signingUp ? "Sign in" : "Create account";
   $("nameWrap").classList.toggle("hidden", !signingUp);
+  $("confirmPasswordWrap").classList.toggle("hidden", !signingUp);
+  $("confirmPassword").required = signingUp;
+  $("confirmPassword").value = "";
   $("nameInput").required = signingUp;
   $("passwordInput").autocomplete = signingUp ? "new-password" : "current-password";
   $("forgotRow").classList.toggle("hidden", signingUp);
@@ -240,12 +245,28 @@ function setAuthMode(mode) {
   $("resendWrap").classList.add("hidden");
 }
 $("switchAuth").addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
+$("togglePassword").addEventListener("click", () => {
+  const field = $("passwordInput");
+  const reveal = field.type === "password";
+  field.type = reveal ? "text" : "password";
+  $("togglePassword").textContent = reveal ? "Hide password" : "Show password";
+});
 
 $("authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = $("emailInput").value.trim().toLowerCase();
   const password = $("passwordInput").value;
   const name = $("nameInput").value.trim();
+  if (authMode === "signup" && password !== $("confirmPassword").value) {
+    showAuthMessage("Your passwords do not match.");
+    $("confirmPassword").focus();
+    return;
+  }
+  if (authMode === "signup" && password.length < 10) {
+    showAuthMessage("For better account security, use at least 10 characters.");
+    $("passwordInput").focus();
+    return;
+  }
   $("authSubmit").disabled = true;
   showAuthMessage("Please wait...");
   try {
