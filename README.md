@@ -19,7 +19,7 @@ ASMER AI is a same-origin Cloudflare Worker application. The frontend is served 
 
 1. In the Supabase SQL Editor, run the complete `schema.sql` file once.
 2. In Supabase Authentication → URL Configuration, set the Site URL to your deployed Worker URL and add that same origin to the Redirect URLs allow-list.
-3. In Supabase Authentication → Providers, enable email sign-up. Configure Google or GitHub only if you want those optional buttons.
+3. In Supabase Authentication → Providers, enable email sign-up. Configure Google, GitHub or Twitch only if you want those optional buttons.
 4. For confirmation emails to reach addresses outside your Supabase organization, configure a verified custom SMTP sender in Supabase Auth settings. The frontend cannot fix SMTP delivery by itself.
 5. The Workers AI binding and public Supabase settings are defined in `wrangler.jsonc`. No Supabase service-role key or Cloudflare API token belongs in the browser or this repository.
 6. Run the updated `schema.sql` to create the secure daily image-usage quota function.
@@ -62,6 +62,28 @@ The default chat model is Cloudflare's GLM-4.7-Flash, which is documented as sup
 The old FastAPI/Render backend and its dependency/deployment files were removed from this Cloudflare Worker branch so there is one active backend. The active frontend is self-contained in `static/index.html`; duplicate `static/app.js` and `static/styles.css` copies were also removed. A committed local SQLite database and Python bytecode cache were removed from this branch.
 
  
+## Twitch OAuth setup
+
+ASMER AI supports Twitch sign-in through Supabase Auth. The Twitch button uses the same hosted OAuth return URL as the other social providers.
+
+1. In the [Twitch Developer Console](https://dev.twitch.tv/console/apps), register an application. Choose the appropriate website category and set the OAuth Redirect URL to this exact Supabase callback:
+
+   ```text
+   https://sygggzdyafmzbkziehbz.supabase.co/auth/v1/callback
+   ```
+
+2. Copy the Twitch Client ID and generate/copy its Client Secret.
+3. In **Supabase → Authentication → Providers → Twitch**, enable Twitch and enter the Client ID and Client Secret privately in the dashboard.
+4. Confirm that Supabase **Authentication → URL Configuration** allows the hosted ASMER URL:
+
+   ```text
+   https://asmer-ai.hamody-dodo2015.workers.dev/
+   ```
+
+5. Save the provider settings and test the Twitch button on the deployed ASMER site.
+
+Keep the Twitch Client Secret in Supabase provider settings only. Never put it in frontend code, wrangler.jsonc, or GitHub. Twitch login cannot work until the provider is enabled and configured in Supabase.
+
 ## Google OAuth setup (important)
 
 The app sends OAuth, signup-confirmation and password-reset return links to the production site URL below, not the current browser origin (which could be `localhost`):
