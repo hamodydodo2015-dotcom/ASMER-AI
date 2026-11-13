@@ -444,13 +444,18 @@ function updateUserInterface(user) {
 }
 
 // Restore existing login when the page opens
-async function initializeAuth() {
-  const { data, error } = await supabaseClient.auth.getSession();
+async function signInWithGoogle() {
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
 
-  if (error) {
-    showAuthMessage(error.message);
-    return;
-  }
+    if (error) {
+        alert(error.message);
+    }
+}
 
   updateUserInterface(data.session?.user || null);
 }
