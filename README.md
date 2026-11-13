@@ -1,5 +1,7 @@
 # ASMER AI
 
+**Current release candidate: 2.2.0** — monochrome workspace, hosted OAuth redirects, copyable AI answers and Markdown conversation export.
+
 ASMER AI is a same-origin Cloudflare Worker application. The frontend is served from `static/index.html`, the API runs in `src/index.js`, authentication and user data are handled by Supabase, and model inference uses the Cloudflare Workers AI binding.
 
 ## Stack
@@ -87,3 +89,21 @@ Configure both sides of the OAuth redirect:
 5. Save changes and test Google sign-in from the deployed site. Google checks the **Supabase callback URI** against Authorized redirect URIs; it is not the same as the ASMER website URL. A `redirect_uri_mismatch` error means that callback URI is missing or differs by even one character.
 
 Never put the Google Client Secret in frontend code or commit it to GitHub. The app code cannot edit Google Cloud or Supabase dashboard settings automatically.
+
+
+## Version 2.2.0 release notes
+
+- Fixed Google OAuth, signup confirmation, resend-confirmation and password-reset redirect targets to use the hosted ASMER website rather than the browser's current origin.
+- Added a one-click copy action to assistant answers.
+- Added Markdown export for the currently displayed conversation.
+- Added a visible application version label and updated package metadata to 2.2.0.
+- Preserved the black-and-white interface and the existing chat, image, motion-video and file tools.
+
+### Release checklist
+
+- Apply the current `schema.sql` in Supabase.
+- Configure Supabase Site URL and Redirect URLs.
+- Add the Supabase callback URL to Google Cloud's Authorized redirect URIs and configure the Google provider in Supabase.
+- Configure custom SMTP privately if confirmation/reset email delivery to all users is required.
+- Keep Cloudflare Workers on the Free plan to avoid paid AI overage charges; image/video quotas remain provider-limited.
+- Deploy and run live tests before announcing this as a production release.
