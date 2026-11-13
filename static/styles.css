@@ -221,9 +221,19 @@ input:focus, textarea:focus { border-color: var(--cyan); }
 }
 
 .content{
-  flex:1;
-  min-height:0;
-  overflow-y:auto;
+ flex:1;
+ min-height:0;
+ overflow-y:auto;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ padding:55px 22px 30px;
+}
+
+.composer-area{
+ flex-shrink:0;
+ position:relative;
+ z-index:2;
 }
 
 .composer-area{
