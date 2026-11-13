@@ -1,6 +1,7 @@
 # ASMER AI 2.2.0 — Release Candidate
 
 ## What's new
+- Added Twitch as a third optional social sign-in provider alongside Google and GitHub; configure its OAuth app and credentials in Twitch Developer Console and Supabase Auth.
 - Pure black-and-white workspace styling.
 - Google OAuth, signup confirmation, resend confirmation and password-reset flows return to the hosted ASMER website instead of `localhost`.
 - Copy buttons on completed assistant answers.
@@ -18,8 +19,9 @@
 2. Set Supabase Site URL and Redirect URLs to `https://asmer-ai.hamody-dodo2015.workers.dev/`.
 3. In Google Cloud OAuth credentials, add `https://sygggzdyafmzbkziehbz.supabase.co/auth/v1/callback` to Authorized redirect URIs.
 4. Enable Google in Supabase Auth and enter the OAuth Client ID and Client Secret privately in the Supabase dashboard.
-5. Configure a verified custom SMTP sender privately if email confirmation and reset messages must reach arbitrary users.
-6. Deploy the updated Worker and test signup, login, Google OAuth, password reset, chat, image generation, motion-video export, file downloads and Markdown export.
+5. Register a Twitch OAuth application using the Supabase callback URL, then enable Twitch and save its Client ID and Client Secret privately in Supabase Auth.
+6. Configure a verified custom SMTP sender privately if email confirmation and reset messages must reach arbitrary users.
+7. Deploy the updated Worker and test signup, login, Google OAuth, password reset, chat, image generation, motion-video export, file downloads and Markdown export.
 
 ## Free-tier and honesty notes
 - There is no guarantee of unlimited free AI inference, image generation, video generation or email delivery.
