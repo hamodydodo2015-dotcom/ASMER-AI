@@ -196,6 +196,9 @@ let currentChatId = null;
 let isSending = false;
 let recoveryMode = false;
 let toastTimer = null;
+let lastAssistantResponse = "";
+let lastGeneratedImageDataUrl = "";
+let lastMotionVideoUrl = "";
 
 function showAuthMessage(message) { $("authMessage").textContent = message || ""; }
 function toast(message) {
@@ -403,6 +406,7 @@ async function api(path, options) {
 }
 
 function appendMessage(role, content) {
+  if (role === "assistant" && content && content !== "Thinking...") lastAssistantResponse = content;
   $("welcome").classList.add("hidden");
   const row = document.createElement("div");
   row.className = "message " + role;
@@ -515,6 +519,7 @@ async function sendMessage(value) {
     });
     currentChatId = result.chat_id;
     answerNode.textContent = result.response || "The AI returned an empty response.";
+    lastAssistantResponse = answerNode.textContent;
     await loadHistory();
   } catch (error) {
     answerNode.textContent = "I couldn't complete that request.\n\n" + error.message;
@@ -557,6 +562,194 @@ $("logoutButton").addEventListener("click", async () => {
 $("openSidebar").addEventListener("click", () => $("sidebar").classList.add("open"));
 $("closeSidebar").addEventListener("click", () => $("sidebar").classList.remove("open"));
 document.querySelectorAll(".prompt").forEach((button) => button.addEventListener("click", () => sendMessage(button.dataset.prompt)));
+
+function setWorkspaceView(view) {
+  const views = { chat: "chatView", image: "imageView", video: "videoView", files: "filesView" };
+  Object.entries(views).forEach(([key, id]) => {
+    $(id).classList.toggle("hidden", key !== view);
+  });
+  document.querySelectorAll(".tool-tab").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  const titles = { chat: "ASMER", image: "Image Studio", video: "Motion Studio", files: "File Studio" };
+  document.querySelector(".topbar-title").textContent = titles[view] || "ASMER";
+  $("sidebar").classList.remove("open");
+}
+document.querySelectorAll(".tool-tab").forEach((button) => {
+  button.addEventListener("click", () => setWorkspaceView(button.dataset.view));
+});
+
+$("generateImage").addEventListener("click", async () => {
+  const button = $("generateImage");
+  const prompt = $("imagePrompt").value.trim();
+  if (!prompt) { $("imageStatus").textContent = "Write a description first."; $("imagePrompt").focus(); return; }
+  button.disabled = true;
+  $("downloadImage").disabled = true;
+  $("imageStatus").textContent = "Creating your image. This can take a little while...";
+  try {
+    const result = await api("/api/image", { method: "POST", body: JSON.stringify({ prompt: prompt }) });
+    if (!result.image) throw new Error("The image service returned no image data.");
+    lastGeneratedImageDataUrl = "data:" + (result.mime_type || "image/jpeg") + ";base64," + result.image;
+    $("generatedImage").src = lastGeneratedImageDataUrl;
+    $("generatedImage").classList.remove("hidden");
+    $("downloadImage").disabled = false;
+    $("imageStatus").textContent = "Image created. Your account's daily image allowance has been used by one request.";
+  } catch (error) {
+    $("imageStatus").textContent = error.message || "Image generation failed.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("downloadImage").addEventListener("click", () => {
+  if (!lastGeneratedImageDataUrl) return;
+  const link = document.createElement("a");
+  link.href = lastGeneratedImageDataUrl;
+  link.download = "asmer-ai-image.jpg";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+});
+
+$("useLastAnswer").addEventListener("click", () => {
+  if (!lastAssistantResponse) {
+    $("fileStatus").textContent = "Ask ASMER AI a question in Chat first.";
+    return;
+  }
+  $("fileContent").value = lastAssistantResponse;
+  $("fileStatus").textContent = "Latest AI answer inserted. Review it before downloading.";
+});
+
+$("createFile").addEventListener("click", () => {
+  const rawName = $("fileName").value.trim() || "asmer-document";
+  const extension = $("fileType").value;
+  const content = $("fileContent").value;
+  if (!content.trim()) { $("fileStatus").textContent = "Add some content before creating the file."; return; }
+  if (content.length > 2000000) { $("fileStatus").textContent = "This file is too large. Keep it under 2 MB."; return; }
+  if (extension === "json") {
+    try { JSON.parse(content); }
+    catch { $("fileStatus").textContent = "This is not valid JSON yet. Fix the formatting and try again."; return; }
+  }
+  const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/^\.+/, "").slice(0, 70) || "asmer-document";
+  const filename = safeName.toLowerCase().endsWith("." + extension) ? safeName : safeName + "." + extension;
+  const mimeTypes = {
+    txt: "text/plain;charset=utf-8", md: "text/markdown;charset=utf-8",
+    html: "text/html;charset=utf-8", json: "application/json;charset=utf-8",
+    csv: "text/csv;charset=utf-8", js: "text/javascript;charset=utf-8",
+    css: "text/css;charset=utf-8", py: "text/x-python;charset=utf-8"
+  };
+  const blob = new Blob([content], { type: mimeTypes[extension] || "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $("fileStatus").textContent = "Created " + filename + " on your device.";
+});
+
+function loadVideoImage() {
+  return new Promise((resolve, reject) => {
+    const file = $("videoSource").files && $("videoSource").files[0];
+    let source = lastGeneratedImageDataUrl;
+    let objectUrl = "";
+    if (file) {
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+        reject(new Error("Choose a PNG, JPEG or WebP image."));
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        reject(new Error("Choose an image smaller than 10 MB."));
+        return;
+      }
+      objectUrl = URL.createObjectURL(file);
+      source = objectUrl;
+    }
+    if (!source) {
+      reject(new Error("Upload an image or create one in Image Studio first."));
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      reject(new Error("The selected image could not be opened."));
+    };
+    img.src = source;
+  });
+}
+
+$("createMotionVideo").addEventListener("click", async () => {
+  const button = $("createMotionVideo");
+  button.disabled = true;
+  $("videoStatus").textContent = "Preparing your browser-based motion clip...";
+  $("downloadMotionVideo").classList.add("hidden");
+  $("motionVideo").classList.add("hidden");
+  try {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error("This browser does not support local video recording. Try an up-to-date desktop Chrome or Edge browser.");
+    }
+    const img = await loadVideoImage();
+    const canvas = document.createElement("canvas");
+    canvas.width = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create the video canvas.");
+    const stream = canvas.captureStream(24);
+    const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+    if (!mimeType) throw new Error("This browser does not support WebM video export.");
+    const recorder = new MediaRecorder(stream, { mimeType: mimeType });
+    const chunks = [];
+    recorder.ondataavailable = (event) => { if (event.data && event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => { $("videoStatus").textContent = "The browser could not record the clip."; stream.getTracks().forEach((track) => track.stop()); button.disabled = false; };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      if (lastMotionVideoUrl) URL.revokeObjectURL(lastMotionVideoUrl);
+      lastMotionVideoUrl = URL.createObjectURL(blob);
+      $("motionVideo").src = lastMotionVideoUrl;
+      $("motionVideo").classList.remove("hidden");
+      $("downloadMotionVideo").href = lastMotionVideoUrl;
+      $("downloadMotionVideo").classList.remove("hidden");
+      $("videoStatus").textContent = "Your motion clip is ready. It was created locally and did not use a video API.";
+      stream.getTracks().forEach((track) => track.stop());
+      button.disabled = false;
+    };
+    const width = canvas.width, height = canvas.height;
+    const scale = Math.max(width / img.width, height / img.height);
+    const baseWidth = img.width * scale, baseHeight = img.height * scale;
+    const duration = 6500;
+    recorder.start(200);
+    const started = performance.now();
+    function drawFrame(now) {
+      const progress = Math.min(1, (now - started) / duration);
+      const zoom = 1 + 0.12 * progress;
+      const drawWidth = baseWidth * zoom, drawHeight = baseHeight * zoom;
+      const driftX = Math.sin(progress * Math.PI * 2) * 18;
+      const driftY = Math.cos(progress * Math.PI * 2) * 10;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, (width - drawWidth) / 2 + driftX, (height - drawHeight) / 2 + driftY, drawWidth, drawHeight);
+      ctx.fillStyle = "rgba(0,0,0,.30)";
+      ctx.fillRect(0, height - 74, width, 74);
+      ctx.fillStyle = "#fff";
+      ctx.font = "600 22px Arial";
+      ctx.fillText("ASMER AI", 34, height - 31);
+      $("videoStatus").textContent = "Rendering motion clip: " + Math.round(progress * 100) + "%";
+      if (progress < 1) requestAnimationFrame(drawFrame);
+      else setTimeout(() => { if (recorder.state !== "inactive") recorder.stop(); }, 250);
+    }
+    requestAnimationFrame(drawFrame);
+  } catch (error) {
+    $("videoStatus").textContent = error.message || "Could not create the video.";
+    button.disabled = false;
+  }
+});
+
 initializeAuth();
 </script>
 </body>
