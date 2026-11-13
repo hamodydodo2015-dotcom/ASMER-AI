@@ -392,7 +392,7 @@ async function socialLogin(provider) {
 
   try {
     const options = {
-      redirectTo: window.location.origin
+     redirectTo: https://asmer-ai.hamody-dodo2015.workers.dev/
     };
 
     if (provider === "azure") {
@@ -444,28 +444,37 @@ function updateUserInterface(user) {
 }
 
 // Restore existing login when the page opens
-async function signInWithGoogle() {
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-            redirectTo: window.location.origin
-        }
-    });
 
-    if (error) {
-        alert(error.message);
+// ==========================================
+// 4. RESTORE USER SESSION
+// ==========================================
+
+// Always use the website's current origin.
+// On your deployed website, this should be your Cloudflare URL.
+const AUTH_REDIRECT_URL = window.location.origin;
+
+// Restore existing login when the page opens
+async function initializeAuth() {
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (error) throw error;
+
+        updateUserInterface(data.session?.user || null);
+    } catch (error) {
+        console.error("ASMER AUTH ERROR:", error);
+        updateUserInterface(null);
     }
-}
-
-  updateUserInterface(data.session?.user || null);
 }
 
 // Watch for login, logout and OAuth callback changes
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  updateUserInterface(session?.user || null);
+    updateUserInterface(session?.user || null);
 });
 
+// Start authentication
 initializeAuth();
+
 
 // Sign out
 $("logoutButton").addEventListener("click", async () => {
