@@ -92,9 +92,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <form id="authForm">
       <div id="nameWrap" class="hidden"><label class="field-label" for="nameInput">Your name</label><input class="field" id="nameInput" type="text" maxlength="60" autocomplete="name" placeholder="Your name"></div>
       <label class="field-label" for="emailInput">Email address</label><input class="field" id="emailInput" class="field" type="email" maxlength="254" autocomplete="email" required placeholder="you@example.com">
-      <label class="field-label" for="passwordInput">Password</label><input class="field" id="passwordInput" type="password" minlength="8" maxlength="128" autocomplete="current-password" required placeholder="At least 8 characters">
+      <label class="field-label" for="passwordInput">Password</label><input class="field" id="passwordInput" type="password" minlength="10" maxlength="128" autocomplete="current-password" required placeholder="At least 10 characters">
       <div style="text-align:right;margin-top:5px"><button class="text-button" id="togglePassword" type="button">Show password</button></div>
-      <div id="confirmPasswordWrap" class="hidden"><label class="field-label" for="confirmPassword">Confirm password</label><input class="field" id="confirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Enter your password again"></div>
+      <div id="confirmPasswordWrap" class="hidden"><label class="field-label" for="confirmPassword">Confirm password</label><input class="field" id="confirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Enter your password again"></div>
       <div class="forgot-row" id="forgotRow"><button class="text-button" id="forgotButton" type="button">Forgot password?</button></div>
       <button class="primary" id="authSubmit" type="submit">Sign in</button>
     </form>
