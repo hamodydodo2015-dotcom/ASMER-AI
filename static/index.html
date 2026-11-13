@@ -188,6 +188,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 "use strict";
 const SUPABASE_URL = "https://sygggzdyafmzbkziehbz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X0VAxyre9qW0KfDTeAFICA_6p--fjDk";
+// Keep hosted authentication flows away from localhost.
+const AUTH_REDIRECT_URL = "https://asmer-ai.hamody-dodo2015.workers.dev/";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
@@ -274,7 +276,7 @@ $("authForm").addEventListener("submit", async (event) => {
       const result = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: { full_name: name }, emailRedirectTo: window.location.origin }
+        options: { data: { full_name: name }, emailRedirectTo: AUTH_REDIRECT_URL }
       });
       if (result.error) throw result.error;
       if (result.data.session) {
@@ -305,7 +307,7 @@ $("resendConfirmation").addEventListener("click", async () => {
   button.disabled = true;
   showAuthMessage("Sending a new confirmation email...");
   try {
-    const result = await supabaseClient.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: window.location.origin } });
+    const result = await supabaseClient.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: AUTH_REDIRECT_URL } });
     if (result.error) throw result.error;
     showAuthMessage("If this address has an unconfirmed account, a new confirmation email has been requested. Check your inbox and spam folder.");
   } catch (error) {
@@ -321,7 +323,7 @@ $("forgotButton").addEventListener("click", async () => {
   $("forgotButton").disabled = true;
   showAuthMessage("Sending password reset email...");
   try {
-    const result = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    const result = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT_URL });
     if (result.error) throw result.error;
     showAuthMessage("If an account exists for this address, a password reset email has been sent. Check your inbox and spam folder.");
   } catch (error) {
@@ -339,7 +341,7 @@ document.querySelectorAll("[data-provider]").forEach((button) => {
     try {
       const result = await supabaseClient.auth.signInWithOAuth({
         provider: provider,
-        options: { redirectTo: window.location.origin }
+        options: { redirectTo: AUTH_REDIRECT_URL }
       });
       if (result.error) throw result.error;
     } catch (error) {
