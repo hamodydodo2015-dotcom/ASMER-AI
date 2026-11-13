@@ -13,6 +13,6 @@
   "vars": {
     "SUPABASE_URL": "https://sygggzdyafmzbkziehbz.supabase.co",
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_X0VAxyre9qW0KfDTeAFICA_6p--fjDk",
-    "ASMER_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct"
+    "ASMER_MODEL": "@cf/zai-org/glm-4.7-flash"
   }
 }
