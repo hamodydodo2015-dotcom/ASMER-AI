@@ -7,7 +7,9 @@ const TOOL_CATALOGUE = [
   { id: "calculator", name: "Calculator", category: "Utilities", description: "Evaluate basic arithmetic expressions on the server.", permission: "standard", status: "available" },
   { id: "summarize", name: "Text Summarizer", category: "Productivity", description: "Create a concise summary using the AI model.", permission: "standard", status: "available" },
   { id: "data-preview", name: "Data Analyzer", category: "Analysis", description: "Calculate row counts and numeric-column statistics from JSON data.", permission: "standard", status: "available" },
-  { id: "browser-research", name: "Web Research", category: "Research", description: "Requires a separately configured, trusted search integration.", permission: "connector", status: "not-configured" },
+  { id: "browser-research", name: "Web Research", category: "Research", description: "Search the web using a configured Tavily or Brave Search API key.", permission: "connector", status: "available" },
+  { id: "github-search", name: "GitHub Search", category: "Developer", description: "Search public GitHub repositories through GitHub API.", permission: "standard", status: "available" },
+  { id: "weather", name: "Weather", category: "Utilities", description: "Get current conditions and a short forecast with Open-Meteo.", permission: "standard", status: "available" },
   { id: "computer-agent", name: "Computer Agent", category: "Automation", description: "Disabled. Future local automation must be paired, allowlisted, visible, and user-approved.", permission: "explicit-approval", status: "disabled" }
 ];
 
@@ -121,11 +123,73 @@ async function handleChat(request, env) {
     return json({ error: "AI request failed. Check Workers AI availability and account limits." }, 502);
   }
 }
+
+async function handleResearch(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400); }
+  const query = safeText(body.query, 300);
+  if (!query) return json({ error: "Enter a research question." }, 400);
+  try {
+    if (env.TAVILY_API_KEY) {
+      const response = await fetch("https://api.tavily.com/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ api_key: env.TAVILY_API_KEY, query, search_depth: "basic", max_results: 5, include_answer: false }) });
+      if (!response.ok) return json({ error: "Tavily search failed. Check the key and provider limits." }, 502);
+      const data = await response.json();
+      return json({ provider: "Tavily", results: (data.results || []).map(item => ({ title: safeText(item.title, 240), url: safeText(item.url, 1000), snippet: safeText(item.content, 1200) })) });
+    }
+    if (env.BRAVE_SEARCH_API_KEY) {
+      const endpoint = new URL("https://api.search.brave.com/res/v1/web/search");
+      endpoint.searchParams.set("q", query); endpoint.searchParams.set("count", "5");
+      const response = await fetch(endpoint, { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_SEARCH_API_KEY } });
+      if (!response.ok) return json({ error: "Brave Search failed. Check the key and provider limits." }, 502);
+      const data = await response.json();
+      return json({ provider: "Brave Search", results: (data.web?.results || []).map(item => ({ title: safeText(item.title, 240), url: safeText(item.url, 1000), snippet: safeText(item.description, 1200) })) });
+    }
+    return json({ error: "Configure TAVILY_API_KEY or BRAVE_SEARCH_API_KEY as a Worker secret." }, 503);
+  } catch { return json({ error: "Research provider could not be reached." }, 502); }
+}
+async function handlePlugin(request) {
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400); }
+  const input = safeText(body.input, 200);
+  if (!input) return json({ error: "Provide a search term or city." }, 400);
+  try {
+    if (body.plugin === "github-search") {
+      const endpoint = new URL("https://api.github.com/search/repositories");
+      endpoint.searchParams.set("q", input); endpoint.searchParams.set("sort", "stars"); endpoint.searchParams.set("per_page", "5");
+      const response = await fetch(endpoint, { headers: { "Accept": "application/vnd.github+json", "User-Agent": "ASMER-AI" } });
+      if (!response.ok) return json({ error: "GitHub search request failed." }, 502);
+      const data = await response.json();
+      return json({ plugin: "GitHub Search", results: (data.items || []).map(item => ({ name: safeText(item.full_name, 180), url: item.html_url, description: safeText(item.description || "No description provided.", 500), stars: item.stargazers_count, language: item.language || "Unknown" })) });
+    }
+    if (body.plugin === "weather") {
+      const geo = new URL("https://geocoding-api.open-meteo.com/v1/search");
+      geo.searchParams.set("name", input); geo.searchParams.set("count", "1"); geo.searchParams.set("language", "en"); geo.searchParams.set("format", "json");
+      const geoResponse = await fetch(geo);
+      if (!geoResponse.ok) return json({ error: "Weather location lookup failed." }, 502);
+      const place = (await geoResponse.json()).results?.[0];
+      if (!place) return json({ error: "Location not found. Try a larger nearby city." }, 404);
+      const forecast = new URL("https://api.open-meteo.com/v1/forecast");
+      forecast.searchParams.set("latitude", String(place.latitude)); forecast.searchParams.set("longitude", String(place.longitude));
+      forecast.searchParams.set("current", "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m");
+      forecast.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max");
+      forecast.searchParams.set("forecast_days", "3"); forecast.searchParams.set("timezone", "auto");
+      const weatherResponse = await fetch(forecast);
+      if (!weatherResponse.ok) return json({ error: "Weather provider request failed." }, 502);
+      const data = await weatherResponse.json();
+      return json({ plugin: "Open-Meteo", location: [place.name, place.admin1, place.country].filter(Boolean).join(", "), current: data.current, daily: data.daily, units: data.current_units });
+    }
+    return json({ error: "Unknown plugin." }, 404);
+  } catch { return json({ error: "Plugin provider could not be reached." }, 502); }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/api/health") return json({ ok: true, app: "ASMER AI", version: "5.9.1", aiConfigured: Boolean(env.AI) });
     if (request.method === "GET" && url.pathname === "/api/tools") return json({ tools: TOOL_CATALOGUE });
+    if (request.method === "POST" && url.pathname === "/api/research") return handleResearch(request, env);
+    if (request.method === "POST" && url.pathname === "/api/plugins/run") return handlePlugin(request);
+    if (request.method === "GET" && url.pathname === "/api/integrations") return json({ research: env.TAVILY_API_KEY ? "Tavily configured" : env.BRAVE_SEARCH_API_KEY ? "Brave Search configured" : "needs API key", plugins: ["GitHub Search", "Open-Meteo Weather"] });
     if (request.method === "POST" && url.pathname === "/api/tools/run") return runTool(request, env);
     if (request.method === "POST" && url.pathname === "/api/chat") return handleChat(request, env);
     if (url.pathname.startsWith("/api/")) return json({ error: "API route not found." }, 404);
