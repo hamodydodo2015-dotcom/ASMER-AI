@@ -1,65 +1,70 @@
 # ASMER AI V10 — Final Build
 
-ASMER AI combines Cloudflare Workers AI chat, server-side tools, optional FastAPI analytics, and external provider integrations.
+ASMER AI combines Cloudflare Workers AI chat, server-side tools, external research providers, public API plugins, and an optional standalone Python analytics service.
 
 ## Included
 - Cloudflare Workers AI chat and summarization.
 - Calculator and bounded JSON data analyzer.
-- Live web research using Tavily or Brave Search (configure one API key).
+- Web research through Tavily or Brave Search when configured; Wikipedia API is the no-key fallback.
 - GitHub public repository search.
 - City weather lookup and three-day forecast through Open-Meteo.
+- Optional Python Analytics plugin connector for a separately hosted FastAPI service.
 - Responsive browser dashboard with local conversation history.
-- Optional standalone Python FastAPI analytics service and C++17 utility.
-- API keys stay in Worker secrets, not browser JavaScript.
+- Optional C++17 arithmetic utility.
+- API keys remain in Worker secrets, not browser JavaScript.
 
 ## 1. Enable Workers AI
-The Worker is configured with an AI binding named `AI` in `wrangler.toml`. In Cloudflare Dashboard, open **Workers & Pages**, select your Worker, go to **Settings → Bindings**, add **Workers AI** with variable name `AI` if it is not already present, then redeploy. See [Cloudflare Workers AI bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/).
+The Worker uses an AI binding named `AI`. In Cloudflare Dashboard, open **Workers & Pages**, select `asmer-ai-v10`, go to **Settings → Bindings**, and confirm **Workers AI** is bound with variable name `AI`. The deployed script already includes this binding. See [Cloudflare Workers AI bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/).
 
 ## 2. Deploy the Worker
-On a computer with Node.js 20+:
+The V10 Worker has been deployed to the connected Cloudflare account. To deploy future GitHub changes from your computer:
 ```bash
 git clone https://github.com/hamodydodo2015-dotcom/ASMER-AI.git
 cd ASMER-AI
 npm install
 npx wrangler login
 npm run deploy
-```
-Wrangler uploads the Worker and the `public/` assets. It prints the deployed URL. See [Cloudflare Wrangler deployment](https://developers.cloudflare.com/workers/wrangler/commands/#deploy).
+``
+Wrangler deploys the Worker and the `public/` directory. The Worker also contains a bundled UI fallback for direct API deployments. See [Cloudflare Wrangler deployment](https://developers.cloudflare.com/workers/wrangler/commands/#deploy).
 
-## 3. Configure real web research
-Choose one provider:
+## 3. Configure a broad web research provider (recommended)
+Choose one:
 - [Tavily API](https://tavily.com/) — create an API key.
 - [Brave Search API](https://brave.com/search/api/) — create an API key.
 
-Store the key as a Worker secret; never paste it into HTML or browser JavaScript:
+Add the provider key as a Worker secret:
 ```bash
 npx wrangler secret put TAVILY_API_KEY
 # OR
 npx wrangler secret put BRAVE_SEARCH_API_KEY
 ``
-Then redeploy. The Research page calls `POST /api/research`. If both secrets are configured, Tavily is selected first.
+Then redeploy. If neither key is configured, the Research page uses the Wikipedia API as a limited no-key fallback. Tavily takes priority if both secrets are present.
 
 ## 4. Additional plugins
-- GitHub Search uses GitHub's public repository search API.
-- Weather uses Open-Meteo geocoding and forecast APIs; no API key is required for this basic integration.
-- Calculator, summarizer, and JSON Data Analyzer run through the Worker API.
-The catalogue describes the integrations actually implemented. It does not execute arbitrary user code.
+- **GitHub Search** calls GitHub's public repository search API.
+- **Weather** uses Open-Meteo geocoding and forecast APIs; no key is required for this basic integration.
+- **Python Analytics** connects to the optional FastAPI service described below.
+- Calculator, summarizer, and JSON Data Analyzer run on the Worker.
+The plugin catalogue describes implemented integrations; it does not execute arbitrary user code.
 
 ## 5. Run the optional Python service separately
-This FastAPI service is a separate process; Cloudflare Workers do not start it:
-```bash
+This service runs separately from the Cloudflare Worker. For local development on Windows:
+```powershell
 cd services/python
-python -m venv .venv
-# Windows PowerShell:
+py -m venv .venv
 .venv\\Scripts\\Activate.ps1
-# Windows cmd:
-.venv\\Scripts\\activate.bat
-# macOS/Linux:
-# source .venv/bin/activate
 pip install -r requirements.txt
+$env:ASMER_API_TOKEN = "choose-a-long-random-secret"
 uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ``
-Test it at `http://127.0.0.1:8000/health`. Keep it bound to localhost for local use. If you later host it, add authentication, HTTPS, rate limits, and strict CORS before exposing it publicly.
+Test it at `http://127.0.0.1:8000/health`. On macOS/Linux, use `python3 -m venv .venv` and `source .venv/bin/activate`.
+
+A Dockerfile is provided at `services/python/Dockerfile` for hosting the service separately. When you host it, set `ASMER_API_TOKEN` in the host's environment variables and use HTTPS. Then configure the Worker secrets:
+```bash
+npx wrangler secret put PYTHON_ANALYTICS_URL
+npx wrangler secret put PYTHON_ANALYTICS_TOKEN
+``
+For `PYTHON_ANALYTICS_URL`, enter the HTTPS base URL of your hosted FastAPI service (without `/analyze`). Use the exact same token value for `PYTHON_ANALYTICS_TOKEN` and the Python host's `ASMER_API_TOKEN`. Redeploy after setting secrets. Do not expose an unauthenticated analytics API publicly.
 
 ## 6. Optional C++ utility
 ```bash
@@ -67,8 +72,8 @@ g++ -std=c++17 -O2 engine/cpp/utility_engine.cpp -o asmer-utility
 ```
 
 ## Security
-- Never commit API keys or place them in frontend files.
-- Use Worker secrets for provider credentials.
-- Research results are external content; verify original sources.
+- Never commit API keys or put them in frontend files.
+- Store provider credentials as Cloudflare Worker secrets.
+- Research results are external content; open and verify original sources.
+- Python analytics accepts structured JSON only and never runs uploaded code.
 - Computer control is not implemented or enabled.
-- The Python service is separate and should not be exposed publicly without authentication and HTTPS.
