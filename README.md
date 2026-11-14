@@ -1,65 +1,74 @@
-# ASMER AI V5.9.1
+# ASMER AI V10 — Final Build
 
-A multi-language AI workspace built with HTML, CSS, JavaScript, Cloudflare Workers AI, optional Python analytics, and a small C++ utility engine.
+ASMER AI combines Cloudflare Workers AI chat, server-side tools, optional FastAPI analytics, and external provider integrations.
 
-## Working features
-- Responsive chat dashboard with local conversation history.
-- Cloudflare Worker AI chat endpoint with bounded message history and input validation.
-- Server-side calculator supporting +, -, *, /, %, and parentheses (no eval or arbitrary code execution).
-- AI-powered text summarizer through Workers AI.
-- JSON data analyzer with row counts and numeric-column min, max, and average.
-- Tool catalogue that distinguishes available tools from unconfigured integrations.
-- Optional FastAPI analytics service and C++17 arithmetic CLI.
-- Provider credentials stay on the server; no API keys in browser code.
+## Included
+- Cloudflare Workers AI chat and summarization.
+- Calculator and bounded JSON data analyzer.
+- Live web research using Tavily or Brave Search (configure one API key).
+- GitHub public repository search.
+- City weather lookup and three-day forecast through Open-Meteo.
+- Responsive browser dashboard with local conversation history.
+- Optional standalone Python FastAPI analytics service and C++17 utility.
+- API keys stay in Worker secrets, not browser JavaScript.
 
-## Architecture
-```
-public/                 Browser UI (HTML/CSS/JS)
-worker.js               Cloudflare Worker API and tool runner
-wrangler.toml           Cloudflare configuration
-services/python/        Optional FastAPI analytics service
-engine/cpp/             Optional native utility
-```
+## 1. Enable Workers AI
+The Worker is configured with an AI binding named `AI` in `wrangler.toml`. In Cloudflare Dashboard, open **Workers & Pages**, select your Worker, go to **Settings → Bindings**, add **Workers AI** with variable name `AI` if it is not already present, then redeploy. See [Cloudflare Workers AI bindings](https://developers.cloudflare.com/workers-ai/configuration/bindings/).
 
-## Run locally
-1. Install Node.js 20+.
-2. Run `npm install`.
-3. Sign in using `npx wrangler login`.
-4. Run `npm run dev` and open the local URL printed by Wrangler.
-5. Enable Workers AI for the Cloudflare account to use chat and summarization.
-
-## Deploy
+## 2. Deploy the Worker
+On a computer with Node.js 20+:
 ```bash
+git clone https://github.com/hamodydodo2015-dotcom/ASMER-AI.git
+cd ASMER-AI
 npm install
-npx wrangler deploy
+npx wrangler login
+npm run deploy
 ```
+Wrangler uploads the Worker and the `public/` assets. It prints the deployed URL. See [Cloudflare Wrangler deployment](https://developers.cloudflare.com/workers/wrangler/commands/#deploy).
 
-## Tool examples
-- Calculator: `(12 + 8) * 3`
-- Summarizer: paste text into the Text Summarizer tool.
-- Data Analyzer: paste JSON such as `[{"sales":10},{"sales":20}]`.
+## 3. Configure real web research
+Choose one provider:
+- [Tavily API](https://tavily.com/) — create an API key.
+- [Brave Search API](https://brave.com/search/api/) — create an API key.
 
-## Optional Python service
+Store the key as a Worker secret; never paste it into HTML or browser JavaScript:
+```bash
+npx wrangler secret put TAVILY_API_KEY
+# OR
+npx wrangler secret put BRAVE_SEARCH_API_KEY
+``
+Then redeploy. The Research page calls `POST /api/research`. If both secrets are configured, Tavily is selected first.
+
+## 4. Additional plugins
+- GitHub Search uses GitHub's public repository search API.
+- Weather uses Open-Meteo geocoding and forecast APIs; no API key is required for this basic integration.
+- Calculator, summarizer, and JSON Data Analyzer run through the Worker API.
+The catalogue describes the integrations actually implemented. It does not execute arbitrary user code.
+
+## 5. Run the optional Python service separately
+This FastAPI service is a separate process; Cloudflare Workers do not start it:
 ```bash
 cd services/python
 python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# macOS/Linux: source .venv/bin/activate
+# Windows PowerShell:
+.venv\\Scripts\\Activate.ps1
+# Windows cmd:
+.venv\\Scripts\\activate.bat
+# macOS/Linux:
+# source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-This service is separate from the deployed Worker and is not automatically exposed publicly.
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+``
+Test it at `http://127.0.0.1:8000/health`. Keep it bound to localhost for local use. If you later host it, add authentication, HTTPS, rate limits, and strict CORS before exposing it publicly.
 
-## Optional C++ utility
-Compile with a C++17 compiler:
+## 6. Optional C++ utility
 ```bash
 g++ -std=c++17 -O2 engine/cpp/utility_engine.cpp -o asmer-utility
 ```
 
-## Security boundaries
-- The calculator uses a limited arithmetic parser, not eval.
-- Tool requests are validated and bounded on the server.
-- The tool catalogue does not execute arbitrary code.
-- Web research needs a separately configured trusted search provider.
-- Computer control remains disabled. Any future local agent must be paired, allowlisted, visible, and require user approval.
-- Do not place provider tokens in frontend files.
+## Security
+- Never commit API keys or place them in frontend files.
+- Use Worker secrets for provider credentials.
+- Research results are external content; verify original sources.
+- Computer control is not implemented or enabled.
+- The Python service is separate and should not be exposed publicly without authentication and HTTPS.
