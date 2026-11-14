@@ -1,0 +1,14 @@
+{
+  "name": "asmer-ai-v5-9",
+  "version": "5.9.0",
+  "private": true,
+  "description": "ASMER AI multi-language assistant workspace",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
