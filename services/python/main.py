@@ -1,19 +1,30 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+import hmac
+import os
 from typing import Any
 
-app = FastAPI(title="ASMER AI Analytics", version="5.9.0")
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="ASMER AI Analytics", version="10.0.0")
+
 
 class AnalyzeRequest(BaseModel):
     rows: list[dict[str, Any]] = Field(default_factory=list, max_length=5000)
 
+
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "asmer-python-analytics", "version": "5.9.0"}
+    return {"ok": True, "service": "asmer-python-analytics", "version": "10.0.0"}
+
 
 @app.post("/analyze")
-def analyze(payload: AnalyzeRequest):
-    """Summarize a small JSON table. This endpoint does not execute uploaded code."""
+def analyze(payload: AnalyzeRequest, authorization: str | None = Header(default=None)):
+    """Summarize a JSON table. This endpoint never executes uploaded code."""
+    expected = os.getenv("ASMER_API_TOKEN")
+    if expected:
+        supplied = authorization.removeprefix("Bearer ").strip() if authorization else ""
+        if not hmac.compare_digest(supplied, expected):
+            raise HTTPException(status_code=401, detail="Unauthorized")
     if not payload.rows:
         raise HTTPException(status_code=400, detail="Provide at least one row.")
     columns = sorted({str(key) for row in payload.rows for key in row.keys()})
