@@ -45,21 +45,22 @@ async function loadTools() {
   try {
     const response = await fetch("/api/tools"); const data = await response.json();
     $("#toolGrid").innerHTML = (data.tools || []).map(tool => {
-      const runnable = ["calculator","summarize","data-preview"].includes(tool.id);
+      const runnable = ["calculator","summarize","data-preview","github-search","weather"].includes(tool.id);
       return '<article class="tool-card"><h3>' + escapeHtml(tool.name) + '</h3><p>' + escapeHtml(tool.description) + '</p><div class="tool-meta"><span>' + escapeHtml(tool.category) + '</span><em>' + escapeHtml(tool.status.toUpperCase()) + '</em></div>' +
         (runnable ? '<button class="tool-run" data-tool="' + escapeHtml(tool.id) + '">Run tool →</button>' : "") + '</article>';
     }).join("");
   } catch { $("#toolGrid").textContent = "Could not load the tool catalogue."; }
 }
 async function runTool(tool) {
-  const labels = {calculator:"Enter a calculation (example: (12 + 8) * 3):",summarize:"Paste the text you want summarized:", "data-preview":'Paste JSON rows (example: [{"sales":10},{"sales":20}]):'};
+  const labels = {calculator:"Enter a calculation (example: (12 + 8) * 3):",summarize:"Paste the text you want summarized:", "data-preview":'Paste JSON rows (example: [{"sales":10},{"sales":20}]):',"github-search":"Enter GitHub repository keywords:","weather":"Enter a city name:"};
   const input = prompt(labels[tool]); if (!input?.trim()) return;
   const button = document.querySelector('[data-tool="' + tool + '"]');
   if (button) { button.disabled = true; button.textContent = "Running…"; }
   try {
-    const response = await fetch("/api/tools/run", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tool,input})});
+    const plugin = ["github-search","weather"].includes(tool);
+    const response = await fetch(plugin ? "/api/plugins/run" : "/api/tools/run", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(plugin ? {plugin,input} : {tool,input})});
     const data = await response.json(); if (!response.ok) throw new Error(data.error || "Tool failed.");
-    const output = typeof data.result === "string" ? data.result : JSON.stringify(data.result,null,2);
+    const output = data.result !== undefined ? (typeof data.result === "string" ? data.result : JSON.stringify(data.result,null,2)) : JSON.stringify(data,null,2);
     if (!activeChat()) newChat();
     addMessage("user", "[Run tool: " + tool + "]\n" + input);
     addMessage("assistant", output);
@@ -81,6 +82,21 @@ $("#exportChat").addEventListener("click",()=>{
   const content="# "+chat.title+"\n\n"+chat.messages.map(message=>"**"+message.role+"**\n\n"+message.content).join("\n\n---\n\n");
   const blob=new Blob([content],{type:"text/markdown"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="asmer-conversation.md";link.click();URL.revokeObjectURL(link.href);
 });
+
+$("#researchForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const query = $("#researchQuery").value.trim(); if (!query) return;
+  $("#researchButton").disabled = true; $("#researchButton").textContent = "Searching…";
+  $("#researchStatus").textContent = "Searching with your configured provider…"; $("#researchResults").innerHTML = "";
+  try {
+    const response = await fetch("/api/research", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({query})});
+    const data = await response.json(); if (!response.ok) throw new Error(data.error || "Research failed.");
+    $("#researchStatus").textContent = "Results from " + data.provider + ". Open the original sources to verify details.";
+    $("#researchResults").innerHTML = (data.results || []).map(item => '<article class="research-result"><a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title) + '</a><p>' + escapeHtml(item.snippet) + '</p></article>').join("") || "<p>No results found.</p>";
+  } catch(error) { $("#researchStatus").textContent = error.message; }
+  finally { $("#researchButton").disabled = false; $("#researchButton").textContent = "Search web"; }
+});
+
 async function checkHealth(){try{const response=await fetch("/api/health");const data=await response.json();$("#connectionLabel").textContent=data.aiConfigured?"AI service connected":"App online · AI setup needed";}catch{$("#connectionLabel").textContent="API unavailable";}}
 if(state.chats.length)state.activeId=state.chats[0].id;
 renderHistory();renderMessages();loadTools();checkHealth();
