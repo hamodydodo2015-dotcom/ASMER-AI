@@ -7,7 +7,7 @@ const TOOL_CATALOGUE = [
   { id: "calculator", name: "Calculator", category: "Utilities", description: "Evaluate basic arithmetic expressions on the server.", permission: "standard", status: "available" },
   { id: "summarize", name: "Text Summarizer", category: "Productivity", description: "Create a concise summary using the AI model.", permission: "standard", status: "available" },
   { id: "data-preview", name: "Data Analyzer", category: "Analysis", description: "Calculate row counts and numeric-column statistics from JSON data.", permission: "standard", status: "available" },
-  { id: "browser-research", name: "Web Research", category: "Research", description: "Search the web using a configured Tavily or Brave Search API key.", permission: "connector", status: "available" },
+  { id: "browser-research", name: "Web Research", category: "Research", description: "Search using Tavily or Brave, with a Wikipedia fallback when no key is configured.", permission: "connector", status: "available" },
   { id: "github-search", name: "GitHub Search", category: "Developer", description: "Search public GitHub repositories through GitHub API.", permission: "standard", status: "available" },
   { id: "weather", name: "Weather", category: "Utilities", description: "Get current conditions and a short forecast with Open-Meteo.", permission: "standard", status: "available" },
   { id: "python-analyze", name: "Python Analytics", category: "Analysis", description: "Connect the optional FastAPI service by configuring PYTHON_ANALYTICS_URL.", permission: "connector", status: "not-configured" },
@@ -158,11 +158,14 @@ async function handleResearch(request, env) {
     })) });
   } catch { return json({ error: "Research provider could not be reached." }, 502); }
 }
-async function handlePlugin(request) {
+async function handlePlugin(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400); }
-  const input = safeText(body.input, 200);
-  if (!input) return json({ error: "Provide a search term or city." }, 400);
+  const rawInput = typeof body.input === "string" ? body.input.trim() : "";
+  if (!rawInput) return json({ error: "Provide a search term, city, or JSON dataset." }, 400);
+  if (body.plugin !== "python-analyze" && rawInput.length > 200) return json({ error: "Search input is too long (maximum 200 characters)." }, 400);
+  if (body.plugin === "python-analyze" && rawInput.length > 200000) return json({ error: "JSON dataset is too large (maximum 200 KB)." }, 413);
+  const input = rawInput.slice(0, 200);
   try {
     if (body.plugin === "github-search") {
       const endpoint = new URL("https://api.github.com/search/repositories");
@@ -174,15 +177,15 @@ async function handlePlugin(request) {
     }
     if (body.plugin === "python-analyze") {
       if (!env.PYTHON_ANALYTICS_URL) return json({ error: "Python service is not connected. Configure PYTHON_ANALYTICS_URL as a Worker secret after hosting the FastAPI service." }, 503);
+      if (!env.PYTHON_ANALYTICS_TOKEN) return json({ error: "Python authentication is not configured. Set PYTHON_ANALYTICS_TOKEN in Worker secrets." }, 503);
       let rows;
-      try { rows = JSON.parse(input); } catch { return json({ error: "Paste a valid JSON array of objects." }, 400); }
+      try { rows = JSON.parse(rawInput); } catch { return json({ error: "Paste a valid JSON array of objects." }, 400); }
       if (!Array.isArray(rows) || rows.length < 1 || rows.length > 5000 || !rows.every(row => row && typeof row === "object" && !Array.isArray(row))) return json({ error: "Provide 1–5000 JSON objects." }, 400);
       let base;
       try { base = new URL(env.PYTHON_ANALYTICS_URL); } catch { return json({ error: "PYTHON_ANALYTICS_URL is invalid." }, 500); }
       if (base.protocol !== "https:") return json({ error: "Hosted Python service URL must use HTTPS." }, 500);
       const endpoint = new URL("/analyze", base);
-      const headers = { "content-type": "application/json" };
-      if (env.PYTHON_ANALYTICS_TOKEN) headers.Authorization = "Bearer " + env.PYTHON_ANALYTICS_TOKEN;
+      const headers = { "content-type": "application/json", "Authorization": "Bearer " + env.PYTHON_ANALYTICS_TOKEN };
       const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ rows }) });
       if (!response.ok) return json({ error: "Python analytics service returned an error." }, 502);
       return json({ plugin: "Python Analytics", result: await response.json() });
@@ -215,10 +218,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/api/health") return json({ ok: true, app: "ASMER AI", version: "10.0.0", aiConfigured: Boolean(env.AI) });
-    if (request.method === "GET" && url.pathname === "/api/tools") return json({ tools: TOOL_CATALOGUE });
+    if (request.method === "GET" && url.pathname === "/api/tools") return json({ tools: TOOL_CATALOGUE.map(tool => tool.id === "python-analyze" ? { ...tool, status: env.PYTHON_ANALYTICS_URL && env.PYTHON_ANALYTICS_TOKEN ? "available" : "not-configured" } : tool) });
     if (request.method === "POST" && url.pathname === "/api/research") return handleResearch(request, env);
-    if (request.method === "POST" && url.pathname === "/api/plugins/run") return handlePlugin(request);
-    if (request.method === "GET" && url.pathname === "/api/integrations") return json({ research: env.TAVILY_API_KEY ? "Tavily configured" : env.BRAVE_SEARCH_API_KEY ? "Brave Search configured" : "needs API key", plugins: ["GitHub Search", "Open-Meteo Weather", "Python Analytics (requires hosted service)"] });
+    if (request.method === "POST" && url.pathname === "/api/plugins/run") return handlePlugin(request, env);
+    if (request.method === "GET" && url.pathname === "/api/integrations") return json({ ai: env.AI ? "configured" : "missing", research: env.TAVILY_API_KEY ? "Tavily configured" : env.BRAVE_SEARCH_API_KEY ? "Brave Search configured" : "Wikipedia fallback (add Tavily or Brave key for broader search)", github: "available", weather: "available", pythonAnalytics: env.PYTHON_ANALYTICS_URL && env.PYTHON_ANALYTICS_TOKEN ? "configured" : "needs hosted HTTPS service and matching token" });
     if (request.method === "POST" && url.pathname === "/api/tools/run") return runTool(request, env);
     if (request.method === "POST" && url.pathname === "/api/chat") return handleChat(request, env);
     if (url.pathname.startsWith("/api/")) return json({ error: "API route not found." }, 404);
