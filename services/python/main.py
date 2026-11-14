@@ -21,10 +21,11 @@ def health():
 def analyze(payload: AnalyzeRequest, authorization: str | None = Header(default=None)):
     """Summarize a JSON table. This endpoint never executes uploaded code."""
     expected = os.getenv("ASMER_API_TOKEN")
-    if expected:
-        supplied = authorization.removeprefix("Bearer ").strip() if authorization else ""
-        if not hmac.compare_digest(supplied, expected):
-            raise HTTPException(status_code=401, detail="Unauthorized")
+    if not expected:
+        raise HTTPException(status_code=503, detail="Server authentication is not configured.")
+    supplied = authorization.removeprefix("Bearer ").strip() if authorization else ""
+    if not hmac.compare_digest(supplied, expected):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     if not payload.rows:
         raise HTTPException(status_code=400, detail="Provide at least one row.")
     columns = sorted({str(key) for row in payload.rows for key in row.keys()})
