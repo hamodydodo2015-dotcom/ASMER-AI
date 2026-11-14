@@ -1,4 +1,4 @@
-# ASMER AI V10 — Final Build
+# ASMER AI V10.0.1 — Integration Fixes
 
 ASMER AI combines Cloudflare Workers AI chat, server-side tools, external research providers, public API plugins, and an optional standalone Python analytics service.
 
@@ -64,7 +64,7 @@ A Dockerfile is provided at `services/python/Dockerfile` for hosting the service
 npx wrangler secret put PYTHON_ANALYTICS_URL
 npx wrangler secret put PYTHON_ANALYTICS_TOKEN
 ``
-For `PYTHON_ANALYTICS_URL`, enter the HTTPS base URL of your hosted FastAPI service (without `/analyze`). Use the exact same token value for `PYTHON_ANALYTICS_TOKEN` and the Python host's `ASMER_API_TOKEN`. Redeploy after setting secrets. Do not expose an unauthenticated analytics API publicly.
+For `PYTHON_ANALYTICS_URL`, enter the HTTPS base URL of your hosted FastAPI service (without `/analyze`). Use the exact same token value for `PYTHON_ANALYTICS_TOKEN` and the Python host's `ASMER_API_TOKEN`. Redeploy after setting secrets. The Worker rejects Python analytics calls unless both URL and token are configured. The Python service rejects requests if its host token is missing or incorrect.
 
 GitHub Actions also runs syntax checks for the JavaScript, Python, and C++ files on pushes to `main`.\n\n## 6. Optional C++ utility
 ```bash
