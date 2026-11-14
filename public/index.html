@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="ASMER AI — your intelligent workspace">
+  <title>ASMER AI V5.9</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="ASMER AI home"><span class="brand-mark">A</span><span>ASMER <small>AI V5.9</small></span></a>
+      <button class="new-chat" id="newChat">＋ <span>New conversation</span></button>
+      <div class="side-label">WORKSPACE</div>
+      <button class="nav-item active" data-view="chat">◈ <span>AI Chat</span></button>
+      <button class="nav-item" data-view="projects">▦ <span>Projects</span></button>
+      <button class="nav-item" data-view="tools">⌘ <span>Plugins & Tools</span></button>
+      <button class="nav-item" data-view="research">⌕ <span>Research</span></button>
+      <button class="nav-item" data-view="settings">⚙ <span>Settings</span></button>
+      <div class="history-heading"><span>RECENT CHATS</span><button id="clearHistory" title="Clear chat history">Clear</button></div>
+      <div id="history" class="history-list"></div>
+      <div class="sidebar-bottom"><span class="status-dot"></span><span id="connectionLabel">Connecting…</span></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menuToggle" aria-label="Toggle menu">☰</button>
+        <div><span class="eyebrow">ASMER INTELLIGENCE</span><div class="top-title" id="pageTitle">AI Workspace</div></div>
+        <div class="top-actions"><span class="version-pill">V5.9</span><button class="icon-button" id="exportChat" title="Export conversation">⇩</button></div>
+      </header>
+
+      <section class="view active" id="view-chat">
+        <div class="chat-wrap">
+          <div class="welcome" id="welcome">
+            <div class="orb"><span>A</span></div>
+            <div class="eyebrow">YOUR AI WORKSPACE</div>
+            <h1>Think bigger.<br><span>Build with ASMER.</span></h1>
+            <p>Ask questions, explore ideas, write code, and work through complex tasks.</p>
+            <div class="suggestions">
+              <button class="suggestion" data-prompt="Help me plan and build a full-stack web application.">⌘ <span><b>Build an application</b><small>Plan architecture and write code</small></span></button>
+              <button class="suggestion" data-prompt="Explain a difficult topic clearly, step by step.">✧ <span><b>Learn something</b><small>Understand a complex topic</small></span></button>
+              <button class="suggestion" data-prompt="Help me analyze this dataset. Tell me what data you need.">▤ <span><b>Analyze information</b><small>Find patterns and insights</small></span></button>
+              <button class="suggestion" data-prompt="Help me brainstorm a new product idea and make a practical roadmap.">↗ <span><b>Plan a project</b><small>Turn an idea into milestones</small></span></button>
+            </div>
+          </div>
+          <div class="messages" id="messages" aria-live="polite"></div>
+          <form class="composer" id="chatForm">
+            <textarea id="prompt" rows="1" maxlength="12000" placeholder="Message ASMER AI…" aria-label="Message ASMER AI"></textarea>
+            <div class="composer-bottom"><span>AI can make mistakes. Verify important information.</span><button class="send-button" id="sendButton" type="submit" aria-label="Send message">↑</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="view page-view" id="view-projects"><div class="page-heading"><div class="eyebrow">YOUR WORK</div><h1>Projects</h1><p>Keep your ideas and development work organized.</p></div><div class="empty-panel"><div class="panel-icon">▦</div><h3>Project spaces are coming next</h3><p>This V5.9 foundation currently stores chat history in this browser. Shared project storage needs a database connection.</p></div></section>
+
+      <section class="view page-view" id="view-tools"><div class="page-heading"><div class="eyebrow">EXTEND ASMER</div><h1>Plugins & Tools</h1><p>See what is available and what needs a connector.</p></div><div class="tool-grid" id="toolGrid"><div class="empty-panel">Loading tools…</div></div></section>
+
+      <section class="view page-view" id="view-research"><div class="page-heading"><div class="eyebrow">DISCOVER</div><h1>Research</h1><p>Research connectors are not configured in this starter build.</p></div><div class="empty-panel"><div class="panel-icon">⌕</div><h3>Connect a trusted search provider</h3><p>Once configured, ASMER can retrieve current sources and cite them. It will not pretend to browse when no provider is connected.</p></div></section>
+
+      <section class="view page-view" id="view-settings"><div class="page-heading"><div class="eyebrow">PREFERENCES</div><h1>Settings</h1><p>Manage local app preferences.</p></div><div class="settings-card"><div><b>Conversation storage</b><p>Saved in this browser using local storage.</p></div><span class="setting-state">LOCAL</span></div><div class="settings-card"><div><b>AI provider</b><p>Cloudflare Workers AI, configured on the server.</p></div><span class="setting-state">SERVER</span></div><div class="settings-card"><div><b>Computer control</b><p>Disabled until a secure, paired local agent is developed.</p></div><span class="setting-state muted">DISABLED</span></div></section>
+      <footer class="footer">ASMER AI V5.9 <span>Built for thoughtful, responsible innovation.</span></footer>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
