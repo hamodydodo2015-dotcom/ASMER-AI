@@ -57,7 +57,7 @@ async function runTool(tool) {
   const button = document.querySelector('[data-tool="' + tool + '"]');
   if (button) { button.disabled = true; button.textContent = "Running…"; }
   try {
-    const plugin = ["github-search","weather"].includes(tool);
+    const plugin = ["github-search","weather","python-analyze"].includes(tool);
     const response = await fetch(plugin ? "/api/plugins/run" : "/api/tools/run", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(plugin ? {plugin,input} : {tool,input})});
     const data = await response.json(); if (!response.ok) throw new Error(data.error || "Tool failed.");
     const output = data.result !== undefined ? (typeof data.result === "string" ? data.result : JSON.stringify(data.result,null,2)) : JSON.stringify(data,null,2);
