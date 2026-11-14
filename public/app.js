@@ -45,14 +45,14 @@ async function loadTools() {
   try {
     const response = await fetch("/api/tools"); const data = await response.json();
     $("#toolGrid").innerHTML = (data.tools || []).map(tool => {
-      const runnable = ["calculator","summarize","data-preview","github-search","weather"].includes(tool.id);
+      const runnable = ["calculator","summarize","data-preview","github-search","weather","python-analyze"].includes(tool.id);
       return '<article class="tool-card"><h3>' + escapeHtml(tool.name) + '</h3><p>' + escapeHtml(tool.description) + '</p><div class="tool-meta"><span>' + escapeHtml(tool.category) + '</span><em>' + escapeHtml(tool.status.toUpperCase()) + '</em></div>' +
         (runnable ? '<button class="tool-run" data-tool="' + escapeHtml(tool.id) + '">Run tool →</button>' : "") + '</article>';
     }).join("");
   } catch { $("#toolGrid").textContent = "Could not load the tool catalogue."; }
 }
 async function runTool(tool) {
-  const labels = {calculator:"Enter a calculation (example: (12 + 8) * 3):",summarize:"Paste the text you want summarized:", "data-preview":'Paste JSON rows (example: [{"sales":10},{"sales":20}]):',"github-search":"Enter GitHub repository keywords:","weather":"Enter a city name:"};
+  const labels = {calculator:"Enter a calculation (example: (12 + 8) * 3):",summarize:"Paste the text you want summarized:", "data-preview":'Paste JSON rows (example: [{"sales":10},{"sales":20}]):',"github-search":"Enter GitHub repository keywords:","weather":"Enter a city name:","python-analyze":"Paste JSON rows for the hosted Python service:"};
   const input = prompt(labels[tool]); if (!input?.trim()) return;
   const button = document.querySelector('[data-tool="' + tool + '"]');
   if (button) { button.disabled = true; button.textContent = "Running…"; }
