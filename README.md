@@ -66,7 +66,7 @@ npx wrangler secret put PYTHON_ANALYTICS_TOKEN
 ``
 For `PYTHON_ANALYTICS_URL`, enter the HTTPS base URL of your hosted FastAPI service (without `/analyze`). Use the exact same token value for `PYTHON_ANALYTICS_TOKEN` and the Python host's `ASMER_API_TOKEN`. Redeploy after setting secrets. Do not expose an unauthenticated analytics API publicly.
 
-## 6. Optional C++ utility
+GitHub Actions also runs syntax checks for the JavaScript, Python, and C++ files on pushes to `main`.\n\n## 6. Optional C++ utility
 ```bash
 g++ -std=c++17 -O2 engine/cpp/utility_engine.cpp -o asmer-utility
 ```
