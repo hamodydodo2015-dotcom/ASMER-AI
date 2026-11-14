@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090b10">
   <meta name="description" content="ASMER AI — your intelligent workspace">
-  <title>ASMER AI V5.9</title>
+  <title>ASMER AI V10</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="ASMER AI home"><span class="brand-mark">A</span><span>ASMER <small>AI V5.9</small></span></a>
+      <a class="brand" href="#" aria-label="ASMER AI home"><span class="brand-mark">A</span><span>ASMER <small>AI V10</small></span></a>
       <button class="new-chat" id="newChat">＋ <span>New conversation</span></button>
       <div class="side-label">WORKSPACE</div>
       <button class="nav-item active" data-view="chat">◈ <span>AI Chat</span></button>
@@ -28,7 +28,7 @@
       <header class="topbar">
         <button class="icon-button mobile-menu" id="menuToggle" aria-label="Toggle menu">☰</button>
         <div><span class="eyebrow">ASMER INTELLIGENCE</span><div class="top-title" id="pageTitle">AI Workspace</div></div>
-        <div class="top-actions"><span class="version-pill">V5.9</span><button class="icon-button" id="exportChat" title="Export conversation">⇩</button></div>
+        <div class="top-actions"><span class="version-pill">V10</span><button class="icon-button" id="exportChat" title="Export conversation">⇩</button></div>
       </header>
 
       <section class="view active" id="view-chat">
@@ -53,14 +53,14 @@
         </div>
       </section>
 
-      <section class="view page-view" id="view-projects"><div class="page-heading"><div class="eyebrow">YOUR WORK</div><h1>Projects</h1><p>Keep your ideas and development work organized.</p></div><div class="empty-panel"><div class="panel-icon">▦</div><h3>Project spaces are coming next</h3><p>This V5.9 foundation currently stores chat history in this browser. Shared project storage needs a database connection.</p></div></section>
+      <section class="view page-view" id="view-projects"><div class="page-heading"><div class="eyebrow">YOUR WORK</div><h1>Projects</h1><p>Keep your ideas and development work organized.</p></div><div class="empty-panel"><div class="panel-icon">▦</div><h3>Project spaces are coming next</h3><p>This V10 foundation currently stores chat history in this browser. Shared project storage needs a database connection.</p></div></section>
 
       <section class="view page-view" id="view-tools"><div class="page-heading"><div class="eyebrow">EXTEND ASMER</div><h1>Plugins & Tools</h1><p>See what is available and what needs a connector.</p></div><div class="tool-grid" id="toolGrid"><div class="empty-panel">Loading tools…</div></div></section>
 
       <section class="view page-view" id="view-research"><div class="page-heading"><div class="eyebrow">DISCOVER</div><h1>Research</h1><p>Search the web with your configured provider and open original sources.</p></div><div class="research-box"><form id="researchForm" class="research-form"><input id="researchQuery" type="search" maxlength="300" placeholder="Search the web for a topic…" required><button type="submit" id="researchButton">Search web</button></form><div class="research-note" id="researchStatus">Configure Tavily or Brave Search in Cloudflare Worker secrets to enable web search.</div><div id="researchResults" class="research-results"></div></div></section>
 
       <section class="view page-view" id="view-settings"><div class="page-heading"><div class="eyebrow">PREFERENCES</div><h1>Settings</h1><p>Manage local app preferences.</p></div><div class="settings-card"><div><b>Conversation storage</b><p>Saved in this browser using local storage.</p></div><span class="setting-state">LOCAL</span></div><div class="settings-card"><div><b>AI provider</b><p>Cloudflare Workers AI, configured on the server.</p></div><span class="setting-state">SERVER</span></div><div class="settings-card"><div><b>Computer control</b><p>Disabled until a secure, paired local agent is developed.</p></div><span class="setting-state muted">DISABLED</span></div></section>
-      <footer class="footer">ASMER AI V5.9 <span>Built for thoughtful, responsible innovation.</span></footer>
+      <footer class="footer">ASMER AI V10 <span>Built for thoughtful, responsible innovation.</span></footer>
     </main>
   </div>
   <script src="/app.js" defer></script>
