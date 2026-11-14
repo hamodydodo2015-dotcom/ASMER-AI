@@ -10,6 +10,7 @@ const TOOL_CATALOGUE = [
   { id: "browser-research", name: "Web Research", category: "Research", description: "Search the web using a configured Tavily or Brave Search API key.", permission: "connector", status: "available" },
   { id: "github-search", name: "GitHub Search", category: "Developer", description: "Search public GitHub repositories through GitHub API.", permission: "standard", status: "available" },
   { id: "weather", name: "Weather", category: "Utilities", description: "Get current conditions and a short forecast with Open-Meteo.", permission: "standard", status: "available" },
+  { id: "python-analyze", name: "Python Analytics", category: "Analysis", description: "Connect the optional FastAPI service by configuring PYTHON_ANALYTICS_URL.", permission: "connector", status: "not-configured" },
   { id: "computer-agent", name: "Computer Agent", category: "Automation", description: "Disabled. Future local automation must be paired, allowlisted, visible, and user-approved.", permission: "explicit-approval", status: "disabled" }
 ];
 
@@ -144,7 +145,17 @@ async function handleResearch(request, env) {
       const data = await response.json();
       return json({ provider: "Brave Search", results: (data.web?.results || []).map(item => ({ title: safeText(item.title, 240), url: safeText(item.url, 1000), snippet: safeText(item.description, 1200) })) });
     }
-    return json({ error: "Configure TAVILY_API_KEY or BRAVE_SEARCH_API_KEY as a Worker secret." }, 503);
+    const wiki = new URL("https://en.wikipedia.org/w/api.php");
+    wiki.searchParams.set("action", "query"); wiki.searchParams.set("list", "search"); wiki.searchParams.set("srsearch", query);
+    wiki.searchParams.set("format", "json"); wiki.searchParams.set("utf8", "1"); wiki.searchParams.set("srlimit", "5");
+    const wikiResponse = await fetch(wiki, { headers: { "Accept": "application/json", "User-Agent": "ASMER-AI/10.0 (research workspace)" } });
+    if (!wikiResponse.ok) return json({ error: "Research providers are temporarily unavailable." }, 502);
+    const wikiData = await wikiResponse.json();
+    return json({ provider: "Wikipedia", results: (wikiData.query?.search || []).map(item => ({
+      title: safeText(item.title, 240),
+      url: "https://en.wikipedia.org/wiki/" + encodeURIComponent(item.title.replace(/ /g, "_")),
+      snippet: safeText(item.snippet.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&"), 1200)
+    })) });
   } catch { return json({ error: "Research provider could not be reached." }, 502); }
 }
 async function handlePlugin(request) {
@@ -160,6 +171,21 @@ async function handlePlugin(request) {
       if (!response.ok) return json({ error: "GitHub search request failed." }, 502);
       const data = await response.json();
       return json({ plugin: "GitHub Search", results: (data.items || []).map(item => ({ name: safeText(item.full_name, 180), url: item.html_url, description: safeText(item.description || "No description provided.", 500), stars: item.stargazers_count, language: item.language || "Unknown" })) });
+    }
+    if (body.plugin === "python-analyze") {
+      if (!env.PYTHON_ANALYTICS_URL) return json({ error: "Python service is not connected. Configure PYTHON_ANALYTICS_URL as a Worker secret after hosting the FastAPI service." }, 503);
+      let rows;
+      try { rows = JSON.parse(input); } catch { return json({ error: "Paste a valid JSON array of objects." }, 400); }
+      if (!Array.isArray(rows) || rows.length < 1 || rows.length > 5000 || !rows.every(row => row && typeof row === "object" && !Array.isArray(row))) return json({ error: "Provide 1–5000 JSON objects." }, 400);
+      let base;
+      try { base = new URL(env.PYTHON_ANALYTICS_URL); } catch { return json({ error: "PYTHON_ANALYTICS_URL is invalid." }, 500); }
+      if (base.protocol !== "https:") return json({ error: "Hosted Python service URL must use HTTPS." }, 500);
+      const endpoint = new URL("/analyze", base);
+      const headers = { "content-type": "application/json" };
+      if (env.PYTHON_ANALYTICS_TOKEN) headers.Authorization = "Bearer " + env.PYTHON_ANALYTICS_TOKEN;
+      const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ rows }) });
+      if (!response.ok) return json({ error: "Python analytics service returned an error." }, 502);
+      return json({ plugin: "Python Analytics", result: await response.json() });
     }
     if (body.plugin === "weather") {
       const geo = new URL("https://geocoding-api.open-meteo.com/v1/search");
@@ -192,7 +218,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/tools") return json({ tools: TOOL_CATALOGUE });
     if (request.method === "POST" && url.pathname === "/api/research") return handleResearch(request, env);
     if (request.method === "POST" && url.pathname === "/api/plugins/run") return handlePlugin(request);
-    if (request.method === "GET" && url.pathname === "/api/integrations") return json({ research: env.TAVILY_API_KEY ? "Tavily configured" : env.BRAVE_SEARCH_API_KEY ? "Brave Search configured" : "needs API key", plugins: ["GitHub Search", "Open-Meteo Weather"] });
+    if (request.method === "GET" && url.pathname === "/api/integrations") return json({ research: env.TAVILY_API_KEY ? "Tavily configured" : env.BRAVE_SEARCH_API_KEY ? "Brave Search configured" : "needs API key", plugins: ["GitHub Search", "Open-Meteo Weather", "Python Analytics (requires hosted service)"] });
     if (request.method === "POST" && url.pathname === "/api/tools/run") return runTool(request, env);
     if (request.method === "POST" && url.pathname === "/api/chat") return handleChat(request, env);
     if (url.pathname.startsWith("/api/")) return json({ error: "API route not found." }, 404);
